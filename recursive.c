@@ -4,7 +4,7 @@
 #include <string.h>
 
 /* recursive wildcard matching */
-static bool
+bool
 rmatch(const char *pat, const char *str)
 {
   // end of pat only matches end of str:
@@ -39,6 +39,8 @@ wildmatch(const char *pat, const char *str)
   return rmatch(pat, str);
 }
 
+#ifdef STANDALONE
+
 int
 main(int argc, char *argv[])
 {
@@ -47,6 +49,7 @@ main(int argc, char *argv[])
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <pat> <str1> ...\n", argv[0]);
+    fprintf(stderr, "   or: %s   # to run test suite\n", argv[0]);
     return 127;
   }
 
@@ -59,3 +62,5 @@ main(int argc, char *argv[])
 
   return 0;
 }
+
+#endif
