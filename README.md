@@ -18,20 +18,68 @@ How can wildcard matching be implemented?
 ## Recursive Matching
 
 There is a simple recursive algorithm for matching
-a pattern *pat* against a string *str* as follows:
+a pattern *pat* against a string *str* as follows.
+Look at the first characters of both *pat* and *str*;
+if both are `\0` then we successfully matched; else
+if they do not match, we have a mismatch; otherwise
+recurse over the tails of *pat* and *str*.
 
-1. if *pat* is empty but *str* is not, report mismatch
-2. if first of *pat* is `*`, match remainder of *pat*
-   against ever shorter suffixes of *str* until a
-   match is found; if none is found, report mismatch
-3. if first of *pat* is `?` but *str* is empty, report mismatch
-4. if first of *pat* differs from first of *str*, report mismatch
-5. match remainder of *pat* against remainder of *str*
+With no wildcards, this is just a recursive
+implementation of string equality:
 
-The file [recursive.c](./recursive.c) has an implementation.
+```C
+bool rmatch(const char *pat, const char *str)
+{
+  if (*pat == 0) return *str == 0;
+  if (*pat != *str) return false;
+  return rmatch(pat+1, str+1);
+}
+```
 
-The recursion can get as deep as the string is long,
-which is not very pleasing.
+Add support for the `?` wildcard; the `?` always
+matches as long as *str* still has a character:
+
+```C
+bool rmatch(const char *pat, const char *str)
+{
+  if (*pat == 0) return *str == 0;
+  if (*pat == '?') {
+    if (*str == 0) return false;
+  }
+  else if (*pat != *str) return false;
+  return rmatch(pat+1, str+1);
+}
+```
+
+Add support for the `*` wildcard; if we are at a `*`
+in the pattern, see if the remainder of the pattern
+matches ever shorter suffixes (including the empty
+suffix) of the remaining string.
+
+```C
+bool rmatch(const char *pat, const char *str)
+{
+  if (*pat == 0) return *str == 0;
+  if (*pat == '*') {
+    size_t i, n = strlen(str);
+    for (i = 0; i <= n; i++)
+      if (rmatch(pat+1, str+i)) return true;
+    return false;
+  }
+  if (*pat == '?') {
+    if (*str == 0) return false;
+  }
+  else if (*pat != *str) return false;
+  return rmatch(pat+1, str+1);
+}
+```
+
+This implementation can be found in the
+[recursive.c](./recursive.c) file.
+
+Recursion depth can get as deep as the string is long,
+but no deeper. Still this is highly undesirable and
+calls for an iterative implementation.
 
 ## Iterative Matching
 
