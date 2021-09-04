@@ -1,9 +1,9 @@
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 /* recursive wildcard matching */
+
 bool
 rmatch(const char *pat, const char *str)
 {
@@ -32,6 +32,8 @@ rmatch(const char *pat, const char *str)
   return rmatch(pat+1, str+1);
 }
 
+#ifdef STANDALONE
+
 bool
 wildmatch(const char *pat, const char *str)
 {
@@ -39,7 +41,7 @@ wildmatch(const char *pat, const char *str)
   return rmatch(pat, str);
 }
 
-#ifdef STANDALONE
+#include <stdio.h>
 
 int
 main(int argc, char *argv[])
@@ -49,7 +51,6 @@ main(int argc, char *argv[])
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <pat> <str1> ...\n", argv[0]);
-    fprintf(stderr, "   or: %s   # to run test suite\n", argv[0]);
     return 127;
   }
 

@@ -7,16 +7,19 @@
 
 #include "testing.h"
 
-#define ANSIBLACK  "\033[30m"
-#define ANSIRED    "\033[31m"
-#define ANSIGREEN  "\033[32m"
-#define ANSIYELLOW "\033[33m"
-#define ANSIBLUE   "\033[34m"
-#define ANSICYAN   "\033[36m"
-#define ANSIWHITE  "\033[37m"
-#define ANSIDEFLT  "\033[39m"  /* default foreground color */
-#define ANSIBOLD   "\033[1m"
-#define ANSIRESET  "\033[0m"
+#define ANSIOFF     "\033[0m"
+#define ANSIBOLD    "\033[1m"
+#define ANSIDIM     "\033[90m"
+
+#define ANSIBLACK   "\033[30m"
+#define ANSIRED     "\033[31m"
+#define ANSIGREEN   "\033[32m"
+#define ANSIYELLOW  "\033[33m"
+#define ANSIBLUE    "\033[34m"
+#define ANSIMAGENTA "\033[35m"
+#define ANSICYAN    "\033[36m"
+#define ANSIWHITE   "\033[37m"
+#define ANSIDEFLT   "\033[39m"  /* default foreground color */
 
 struct testing {
   int use_color;
@@ -30,6 +33,15 @@ struct testing {
 };
 
 static struct testing T;
+
+static void
+print_loc_ln(const char *file, int line)
+{
+  if (T.use_color) printf("%s", ANSIDIM);
+  printf("(%s:%d)", file, line);
+  if (T.use_color) printf("%s", ANSIOFF);
+  printf("\n");
+}
 
 void
 test_begin(int use_color, int abort_on_fail)
@@ -56,7 +68,7 @@ test_end(void)
         ANSIGREEN, num_pass, ANSIDEFLT, T.num_failed);
     }
     printf("%s%d ignored", T.num_ignored > 0 ? ANSIYELLOW : "", T.num_ignored);
-    printf("%s\n", ANSIRESET);
+    printf("%s\n", ANSIOFF);
   }
   else printf("%s: %d pass, %d fail, %d ignored\n",
     T.num_failed > 0 ? "Oops" : "OK", num_pass, T.num_failed, T.num_ignored);
@@ -68,9 +80,10 @@ test_heading(const char *msg, const char *file, int line)
 {
   if (!msg || !*msg) msg = "(heading)";
   if (T.use_color)
-    printf("%s%s%s (%s:%d)\n", ANSIBOLD, msg, ANSIRESET, file, line);
+    printf("%s%s%s ", ANSIBOLD, msg, ANSIOFF);
   else
-    printf("## %s (%s:%d)\n", msg, file, line);
+    printf("## %s ", msg);
+  print_loc_ln(file, line);
   fflush(stdout);
 }
 
@@ -89,12 +102,14 @@ test_run(test_fun fun, const char *name, const char *file, int line)
   t1 = clock();
   if (T.cur_test_failed) {
     T.num_failed += 1;
-    fmt = T.use_color ? "%s " ANSIRED "FAIL" ANSIRESET " (%ld ms) (%s:%d)\n" : "%s FAIL (%ld ms) (%s:%d)\n";
-    printf(fmt, name, (long)(t1-t0), file, line);
+    fmt = T.use_color ? "%s " ANSIRED "FAIL" ANSIOFF " (%ld ms) " : "%s FAIL (%ld ms) ";
+    printf(fmt, name, (long)(t1-t0));
+    print_loc_ln(file, line);
   }
   else {
-    fmt = T.use_color ? "%s " ANSIGREEN "PASS" ANSIRESET " (%ld ms) (%s:%d)\n" : "%s PASS (%ld ms) (%s:%d)\n";
-    printf(fmt, name, (long)(t1-t0), file, line);
+    fmt = T.use_color ? "%s " ANSIGREEN "PASS" ANSIOFF " (%ld ms) " : "%s PASS (%ld ms) ";
+    printf(fmt, name, (long)(t1-t0));
+    print_loc_ln(file, line);
   }
   fflush(stdout);
 }
@@ -106,8 +121,9 @@ test_ignore(const char *name, const char *file, int line)
   T.num_tests += 1;
   T.num_ignored += 1;
   T.cur_test_name = name;
-  fmt = T.use_color ? "%s " ANSIYELLOW "IGNORED" ANSIRESET " (%s:%d)\n" : "%s IGNORED (%s:%d)\n";
-  printf(fmt, name, file, line);
+  fmt = T.use_color ? "%s " ANSIYELLOW "IGNORED" ANSIOFF " " : "%s IGNORED ";
+  printf(fmt, name);
+  print_loc_ln(file, line);
   fflush(stdout);
 }
 
@@ -115,7 +131,8 @@ void
 test_fail(const char *msg, const char *file, int line)
 {
   T.cur_test_failed = 1;
-  printf("- %s failed (%s:%d)\n", msg, file, line);
+  printf("- %s failed ", msg);
+  print_loc_ln(file, line);
   fflush(stdout);
   if (T.abort_on_fail)
     test_abort(0, file, line);
@@ -126,7 +143,8 @@ test_abort(const char *msg, const char *file, int line)
 {
   T.cur_test_failed = 1; /* abort implies fail */
   if (msg) {
-    printf("- %s (%s:%d)\n", msg, file, line);
+    printf("- %s ", msg);
+    print_loc_ln(file, line);
     fflush(stdout);
   }
   longjmp(T.jumpout, 1);
@@ -135,9 +153,8 @@ test_abort(const char *msg, const char *file, int line)
 void
 test_info(const char *msg, const char *file, int line)
 {
-  const char *fmt;
   if (!msg) return;
-  fmt = T.use_color ? ANSIBLUE "%s" ANSIRESET " (%s:%d)\n" : "%s (%s:%d)\n";
-  printf(fmt, msg, file, line);
+  printf(T.use_color ? ANSIBLUE "%s" ANSIOFF " " : "%s ", msg);
+  print_loc_ln(file, line);
   fflush(stdout);
 }

@@ -88,7 +88,9 @@ TODO
 ## Bells and Whistles
 
 - character classes like `[abc]`
+- option to ignore case (case folding)
 - path names: wildcards do not match `/` (path separator)
+- path names: new wildcard `**` that does match `/`
 - hidden files: leading dot is only matched by leading dot
 - utf-8: multibyte encoding, possibility for invalid encoding
 
