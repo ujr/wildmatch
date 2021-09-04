@@ -1,17 +1,19 @@
 
 CFLAGS = -Wall -Wextra -g
 
-all: recursive tests
+all: recursive iterative tests
 
 recursive: recursive.c
 	$(CC) $(CFLAGS) -DSTANDALONE -o $@ recursive.c
 
-tests: tests.c recursive.c testing.c testing.h
-	$(CC) $(CFLAGS) -o $@ tests.c recursive.c testing.c
+iterative: iterative.c
+	$(CC) $(CFLAGS) -DSTANDALONE -o $@ iterative.c
+
+tests: tests.c recursive.c iterative.c testing.c testing.h
+	$(CC) $(CFLAGS) -o $@ tests.c recursive.c iterative.c testing.c
 
 check: tests
-	@echo "Running Test Suite..."
 	./tests
 
 clean:
-	rm -f recursive tests
+	rm -f recursive iterative tests

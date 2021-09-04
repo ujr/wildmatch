@@ -83,7 +83,66 @@ calls for an iterative implementation.
 
 ## Iterative Matching
 
-TODO
+Any `*` in the pattern ends a segment of characters that
+must match 1:1, whereas the `*` can “stretch” as needed
+so as to find a match for the following segment.
+
+The initial segment (before the first `*`) must match 1:1
+and if it does not, the whole pattern does not match.
+
+If any of the following segments does not match, try
+again but resume one character later in the string
+(conceptually we stretch the previous `*` by one character).
+
+```C
+bool imatch(const char *pat, const char *str)
+{
+  for (;;) {
+    pc = *pat++;
+    if (pc == '*') break;
+    sc = *str++;
+    if (sc == 0)
+      return pc == 0 ? true : false;
+    if (pc != '?' && pc != sc)
+      return false;
+  }
+
+  p = pat; s = str;  // set anchor just after *
+
+  for (;;) {
+    pc = *pat++;
+    if (pc == '*') {
+      p = pat;       // set anchor just after *
+      s = str;
+      continue;
+    }
+    sc = *str++;
+    if (sc == 0)
+      return pc == 0 ? true : false;
+    if (pc != '?' && pc != sc) {
+      pat = p;       // resume at anchor in pattern
+      str = ++s;     // but one later in string
+      continue;
+    }
+  }
+}
+```
+
+First `if` in second loop: when seeing an `*` in *pat*
+this commits the current segment and we set an “anchor”
+just after the `*` in *pat* (`p`) and at the current
+location in *str* (`s`).
+
+Last `if` in second loop: upon a mismatch, return to
+the anchor in *pat* and one after the anchor in *str*
+and try again. Here is room for optimization: e.g.,
+after matching `*abcX` against `abcZ`, resuming with
+`*abcX` against `bcZ` is on the safe side, but if there
+is a match, it must be after the `Z` in *str*.
+
+Likely there are other algorithms, but the one above
+was “stretchy” enough for my mind. An implementation
+can be found in the [iterative.c](./iterative.c) file.
 
 ## Bells and Whistles
 
