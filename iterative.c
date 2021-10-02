@@ -61,7 +61,7 @@ swapcase(int c)
   return l == c ? toupper(c) : l;
 }
 
-bool
+static bool
 imatch(const char *pat, const char *str, int flags)
 {
   const char *p, *s;
@@ -126,14 +126,14 @@ imatch(const char *pat, const char *str, int flags)
   assert(0); /* not reached */
 }
 
-#ifdef STANDALONE
-
-bool
+int
 wildmatch(const char *pat, const char *str, int flags)
 {
   if (!pat || !str) return false;
   return imatch(pat, str, flags);
 }
+
+#ifdef STANDALONE
 
 #include <stdio.h>
 #include <string.h>
