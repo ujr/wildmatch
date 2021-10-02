@@ -142,7 +142,7 @@ is a match, it must be after the `Z` in *str*.
 
 Likely there are other algorithms, but the one above
 was “stretchy” enough for my mind. An implementation
-can be found in the [iterative.c](./iterative.c) file.
+can be found in the [iterative1.c](./iterative1.c) file.
 
 ## Bells and Whistles
 

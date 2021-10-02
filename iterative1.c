@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 /* iterative wildcard matching */
 
@@ -66,6 +65,7 @@ wildmatch(const char *pat, const char *str)
 }
 
 #include <stdio.h>
+#include <string.h>
 
 int
 main(int argc, char *argv[])
