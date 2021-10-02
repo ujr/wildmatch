@@ -8,7 +8,7 @@
 static bool debug = 0;
 
 bool
-imatch(const char *pat, const char *str)
+imatch1(const char *pat, const char *str)
 {
   const char *p, *s;
   char pc, sc;
@@ -61,7 +61,7 @@ bool
 wildmatch(const char *pat, const char *str)
 {
   if (!pat || !str) return false;
-  return imatch(pat, str);
+  return imatch1(pat, str);
 }
 
 #include <stdio.h>

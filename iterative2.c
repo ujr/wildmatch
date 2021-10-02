@@ -16,7 +16,6 @@ scanbrack(const char *pat)
   if (pat[n] == '!') n++; /* complement of character class */
   if (pat[n] == ']') n++; /* ordinary at start of class */
   while (pat[n] && pat[n] != ']') n++; /* scan for closing bracket */
-//fprintf(stderr, "{scanbrack: n=%zd}\n", pat[n] ? n+1 : 0);
   return pat[n] ? n+1 : 0; /* return length if found, 0 if not */
 }
 
@@ -52,7 +51,7 @@ matchbrack(const char *pat, int sc)
 }
 
 bool
-imatch(const char *pat, const char *str)
+imatch2(const char *pat, const char *str)
 {
   const char *p, *s;
   char pc, sc;
@@ -119,7 +118,7 @@ bool
 wildmatch(const char *pat, const char *str)
 {
   if (!pat || !str) return false;
-  return imatch(pat, str);
+  return imatch2(pat, str);
 }
 
 #include <stdio.h>

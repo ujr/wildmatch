@@ -170,7 +170,7 @@ then the class matches any single character that is not in the class.
 A practical consideration is how to deal with unclosed character
 classes like `[abc`. While an error is a possible solution, it is
 probably more useful to treat such constructs as ordinary pattern
-characters. File [iterative.c](./iterative.c) has an implementation.
+characters. File [iterative2.c](./iterative2.c) has an implementation.
 
 ## Comparison to Regular Expressions
 
