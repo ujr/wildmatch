@@ -153,6 +153,25 @@ can be found in the [iterative1.c](./iterative1.c) file.
 - hidden files: leading dot is only matched by leading dot
 - utf-8: multibyte encoding, possibility for invalid encoding
 
+### Character Classes
+
+Pattern characters enclosed in squere brackets like `[abc]`
+are known as character classes. They match any single character
+from the class; all other characters to not match.
+Two characters in a class separated by a dash like `0-9` denote
+the range of all characters between the two. The extension depends
+on the character set, but at least with ASCII, e.g. `[0-9A-Fa-f]`
+denotes the set of all hex characters `0123456789ABCDEFabcdef`.
+To include a literal dash in the character class, place it at
+the very beginning of the very end of the class. If a character
+class begins with a `!` (in some implementations also with a `^`),
+then the class matches any single character that is not in the class.
+
+A practical consideration is how to deal with unclosed character
+classes like `[abc`. While an error is a possible solution, it is
+probably more useful to treat such constructs as ordinary pattern
+characters. File [iterative.c](./iterative.c) has an implementation.
+
 ## Comparison to Regular Expressions
 
 Wildcard pattern matching is different from and simpler

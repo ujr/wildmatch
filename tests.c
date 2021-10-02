@@ -88,6 +88,27 @@ test_imatch(void)
   TEST_ASSERT_TRUE(imatch("s*no*", "salentino"));
 }
 
+void
+test_imatch_brack(void)
+{
+  TEST_ASSERT_TRUE(imatch("[abc]", "a"));
+  TEST_ASSERT_TRUE(imatch("x[abc]", "xb"));
+  TEST_ASSERT_TRUE(imatch("x[abc]z", "xcz"));
+  TEST_ASSERT_TRUE(imatch("?[!]-]*", "-x-"));
+  TEST_ASSERT_TRUE(imatch("?[!]-]*", "-!-"));
+  TEST_ASSERT_FALSE(imatch("?[!]-]*", "---"));
+  TEST_ASSERT_FALSE(imatch("?[!]-]*", "-]-"));
+  TEST_ASSERT_TRUE(imatch("[aA][bB][cC]", "AbC"));
+  TEST_ASSERT_FALSE(imatch("a[!b].c", "ab.c"));
+  TEST_ASSERT_TRUE(imatch("[*]/b", "*/b"));
+  TEST_ASSERT_FALSE(imatch("[*]/b", "a/b"));
+  TEST_ASSERT_TRUE(imatch("[?]/b", "?/b"));
+  TEST_ASSERT_FALSE(imatch("[?]/b", "a/b"));
+  TEST_ASSERT_TRUE(imatch("a[b", "a[b")); /* unclosed cc: literal */
+  TEST_ASSERT_TRUE(imatch("-O[0123]", "-O3"));
+  TEST_ASSERT_FALSE(imatch("-O[0123]", "-O4"));
+}
+
 int
 main(void)
 {
@@ -100,6 +121,9 @@ main(void)
 
   TEST_HEADING("Testing iterative wildcard match");
   TEST_RUN(test_imatch);
+
+  TEST_HEADING("Testing iterative wildcard match with brackets");
+  TEST_RUN(test_imatch_brack);
 
   return TEST_END();
 }
