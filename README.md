@@ -172,6 +172,17 @@ classes like `[abc`. While an error is a possible solution, it is
 probably more useful to treat such constructs as ordinary pattern
 characters. File [iterative2.c](./iterative2.c) has an implementation.
 
+### Ignoring Case
+
+Ignoring case is sometimes useful, but not always, so this should
+be an option. It is implemented by case folding, that is, upper
+case is folded to lower case (or vice versa) before comparison.
+An implementation can be found in [iterative.c](./iterative.c).
+
+Two strategies: either, fold both pattern and string to, say,
+lower case; or, compare original pattern against both upper'ed
+and lower'ed string characters (one or the other must match).
+
 ## Comparison to Regular Expressions
 
 Wildcard pattern matching is different from and simpler
