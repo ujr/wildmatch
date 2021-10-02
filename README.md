@@ -177,7 +177,7 @@ characters. File [iterative2.c](./iterative2.c) has an implementation.
 Ignoring case is sometimes useful, but not always, so this should
 be an option. It is implemented by case folding, that is, upper
 case is folded to lower case (or vice versa) before comparison.
-An implementation can be found in [iterative.c](./iterative.c).
+An implementation can be found in [iterative3.c](./iterative3.c).
 
 Two strategies: either, fold both pattern and string to, say,
 lower case; or, compare original pattern against both upper'ed

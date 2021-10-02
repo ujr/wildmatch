@@ -62,7 +62,7 @@ swapcase(int c)
 }
 
 static bool
-imatch(const char *pat, const char *str, int flags)
+imatch3(const char *pat, const char *str, int flags)
 {
   const char *p, *s;
   char pc, sc, folded;
@@ -130,7 +130,7 @@ int
 wildmatch(const char *pat, const char *str, int flags)
 {
   if (!pat || !str) return false;
-  return imatch(pat, str, flags);
+  return imatch3(pat, str, flags);
 }
 
 #ifdef STANDALONE

@@ -145,6 +145,7 @@ struct tests ftests[] = {
   { "*X*[yY]?*", "xyz",     0,             false},
   { "*X*[yY]?*", "xyz",     WILD_CASEFOLD, true },
   { "*X*[yY]?*", "-x-Y-z-", WILD_CASEFOLD, true },
+  { 0, 0, 0, 0 }
 };
 
 void
