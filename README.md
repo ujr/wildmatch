@@ -183,6 +183,30 @@ Two strategies: either, fold both pattern and string to, say,
 lower case; or, compare original pattern against both upper'ed
 and lower'ed string characters (one or the other must match).
 
+## Path Name Specials
+
+Wildcard pattern matching is most frequently used with file path
+names, and in this case, it is more useful if the wildcards do
+not match the directory separator (usually `/`): only a literal
+`/` in the pattern can match a `/` in the string. For example,
+we expect `*.txt` to match `file.txt`, but **not** to match
+`../other/file.txt`. As with case folding, we make this an
+option, so the matching remains useful for other applications.
+
+Two strategies: either, modify the matching logic to look at
+directory separators; or, match each path part separately.
+The implementation in [iterative.c](./iterative.c) follows
+the first strategy.
+
+```text
+str:   abcxy       abc/xy    abc/xy         the tilde ~
+pat:   *~~xy       *~~xy     *~~/xy         indicates the
+                                            stretching of
+      stretch     but cannot stretch        the asterisk
+      to match    across dirsep (pat
+                  fails at '/' vs 'x')
+```
+
 ## Comparison to Regular Expressions
 
 Wildcard pattern matching is different from and simpler

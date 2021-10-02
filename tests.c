@@ -154,6 +154,45 @@ test_imatch_fold(void)
   tabletests(ftests);
 }
 
+struct tests ptests[] = {
+  { "foo/bar",  "foo/bar",   0,             true  },
+  { "foo/bar",  "foo/bar",   WILD_PATHNAME, true  },
+  { "*/*",      "foo/bar",   WILD_PATHNAME, true  },
+  { "*/bar",    "/bar",      WILD_PATHNAME, true  },
+  { "foo/*",    "foo/",      WILD_PATHNAME, true  },
+  { "*",        "foo/bar",   WILD_PATHNAME, false },
+  { "/f/bar/x", "/f/baz/x",  WILD_PATHNAME, false },
+
+  { "a?b",      "a/b",       0,             true  },
+  { "a?b",      "a/b",       WILD_PATHNAME, false },
+  { "a*b",      "a/b",       0,             true  },
+  { "a*b",      "a/b",       WILD_PATHNAME, false },
+  { "a[/]b",    "a/b",       0,             true  },
+  { "a[/]b",    "a/b",       WILD_PATHNAME, false },
+  { "*[/]b",    "a/b",       WILD_PATHNAME, false },
+  { "*[b]",     "a/b",       WILD_PATHNAME, false },
+
+  { "a[b/c]*",  "a/z",       0,             true  },
+  { "a[b/c]*",  "a/z",       WILD_PATHNAME, false },
+  { "foo/*.c",  "foo/bar.c", WILD_PATHNAME, true  },
+  { "foo*.c",   "foo/bar.c", WILD_PATHNAME, false },
+
+  { "/a/b/c/",  "/a/b/c/",   WILD_PATHNAME, true  },
+  { "/*/*/*/",  "/a/b/c/",   WILD_PATHNAME, true  },
+  { "/?/?/?/",  "/a/b/c/",   WILD_PATHNAME, true  },
+  { "/*/*/*/",  "////",      WILD_PATHNAME, true  },
+  { "/*/*/*/",  "////",      0,             true  },
+  { "//***//",  "////",      WILD_PATHNAME, true  },
+
+  { 0, 0, 0, 0 }
+};
+
+void
+test_imatch_path(void)
+{
+  tabletests(ptests);
+}
+
 int
 main(void)
 {
@@ -172,6 +211,9 @@ main(void)
 
   TEST_HEADING("Testing iterative matching with case folding");
   TEST_RUN(test_imatch_fold);
+
+  TEST_HEADING("Testing iterative wildcard match for paths");
+  TEST_RUN(test_imatch_path);
 
   return TEST_END();
 }
