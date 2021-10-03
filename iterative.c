@@ -6,6 +6,7 @@
 
 /* iterative wildcard matching */
 /* with character classes and case folding */
+/* with special logic for path names */
 
 #include "wildmatch.h"
 
@@ -64,18 +65,19 @@ swapcase(int c)
 static bool
 imatch(const char *pat, const char *str, int flags)
 {
-  const char *p, *s;
+  const char *p, *s, *p0 = pat;
   char pc, sc, folded;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
+  bool matchslash, preslash;
 
   /* match up to first * in pat */
 
   for (;;) {
     pc = *pat++;
     if (pc == '*')
-      break;
+      goto entry;
     sc = *str++;
     if (sc == 0)
       return pc == 0 ? true : false;
@@ -91,19 +93,22 @@ imatch(const char *pat, const char *str, int flags)
       return false;
   }
 
-  assert(pc == '*');
+  assert(0); /* not reached */
 
   /* match remaining segments:
      the * is an anchor where we return on mismatch */
-
-  p = pat;
-  s = str;
 
   for (;;) {
     if (debug)
       fprintf(stderr, "s=%s\tp=%s\n", str, pat);
     pc = *pat++;
     if (pc == '*') {
+entry:
+      matchslash = false;
+      preslash = path && pat > p0+1 && pat[-2] == '/';
+      while (*pat == '*') { matchslash = true; pat++; }
+      if (preslash && matchslash && *pat == '/') pat++;
+      /* set anchor (commits previous star) */
       p = pat;
       s = str;
       continue;
@@ -111,11 +116,13 @@ imatch(const char *pat, const char *str, int flags)
     sc = *str++;
     if (sc == 0)
       return pc == 0 ? true : false;
-    if (sc == '/' && path && pc != sc)
-      return false; /* cannot stretch across dirsep */
+    if (sc == '/' && path && pc != sc && !matchslash)
+      return false; /* only a slash can match a slash */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
       if (!matchbrack(pat, sc, folded)) {
+        if (*s == '/' && path && !matchslash)
+          return false; /* cannot stretch across slash */
         pat = p;
         str = ++s;
       }
@@ -123,6 +130,8 @@ imatch(const char *pat, const char *str, int flags)
       continue;
     }
     if (pc != '?' && pc != sc && pc != folded) {
+      if (*s == '/' && path && !matchslash)
+        return false; /* cannot stretch across slash */
       pat = p;
       str = ++s;
       continue;
@@ -153,11 +162,13 @@ main(int argc, char *argv[])
   int i, opt, flags = 0;
 
   me = argv[0];
-  while ((opt = getopt(argc, argv, "dfF")) > 0) {
+  while ((opt = getopt(argc, argv, "dfFpP")) > 0) {
     switch (opt) {
       case 'd': debug = 1; break;
       case 'f': flags |= WILD_CASEFOLD; break;
       case 'F': flags &= ~WILD_CASEFOLD; break;
+      case 'p': flags |= WILD_PATHNAME; break;
+      case 'P': flags &= ~WILD_PATHNAME; break;
       default:
         fprintf(stderr, "%s: invalid option: -%c\n", me, optopt);
         return 127;

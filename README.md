@@ -174,9 +174,9 @@ characters. File [iterative2.c](./iterative2.c) has an implementation.
 
 ### Ignoring Case
 
-Ignoring case is sometimes useful, but not always, so this should
-be an option. It is implemented by case folding, that is, upper
-case is folded to lower case (or vice versa) before comparison.
+Ignoring case is sometimes useful, but not always, so this is an
+option, `CASEFOLD`. It is implemented by folding upper case to
+lower case (or vice versa) before comparison.
 An implementation can be found in [iterative3.c](./iterative3.c).
 
 Two strategies: either, fold both pattern and string to, say,
@@ -191,7 +191,8 @@ not match the directory separator (usually `/`): only a literal
 `/` in the pattern can match a `/` in the string. For example,
 we expect `*.txt` to match `file.txt`, but **not** to match
 `../other/file.txt`. As with case folding, we make this an
-option, so the matching remains useful for other applications.
+option, `PATHNAME`, so the matching remains useful for other
+applications.
 
 Two strategies: either, modify the matching logic to look at
 directory separators; or, match each path part separately.
@@ -206,6 +207,22 @@ pat:   *~~xy       *~~xy     *~~/xy         indicates the
       to match    across dirsep (pat
                   fails at '/' vs 'x')
 ```
+
+With the `PATHNAME` option, we can now only match a fixed
+number of directory parts in a path, e.g. `foo/*/*/bar`
+would match `foo/x/y/bar` but not `foo/x/y/z/bar`. It is
+therefore useful to have a new wildcard `**` that matches
+any number (including zero) of directory parts in a path.
+Because `**` shall match entire directory parts, this
+wildcard can only occur as `**/`, `/**/`, and `/**`.
+Without the `PATHNAME` option, two (or indeed any number
+of) consecutive asterisks are equivalent to just one.
+
+This complicates the code quite a bit because of details
+such as `x/**/y` matching `x/y` (only one slash in string
+but two in pattern) and sensible handling of more than two
+stars (treat `***` as `**`).
+The `goto` is a matter of taste but somehow fits in well.
 
 ## Comparison to Regular Expressions
 

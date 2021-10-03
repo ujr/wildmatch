@@ -171,6 +171,8 @@ struct tests ptests[] = {
   { "a[/]b",    "a/b",       WILD_PATHNAME, false },
   { "*[/]b",    "a/b",       WILD_PATHNAME, false },
   { "*[b]",     "a/b",       WILD_PATHNAME, false },
+  { "???",      "a/b",       0,             true  },
+  { "???",      "a/b",       WILD_PATHNAME, false },
 
   { "a[b/c]*",  "a/z",       0,             true  },
   { "a[b/c]*",  "a/z",       WILD_PATHNAME, false },
@@ -183,6 +185,35 @@ struct tests ptests[] = {
   { "/*/*/*/",  "////",      WILD_PATHNAME, true  },
   { "/*/*/*/",  "////",      0,             true  },
   { "//***//",  "////",      WILD_PATHNAME, true  },
+
+  { "**/foo",   "/foo",      0,             true  },
+  { "**/foo",   "a/foo",     WILD_PATHNAME, true  },
+  { "**/foo",   "a/b/c/foo", WILD_PATHNAME, true  },
+  { "*/foo",    "a/b/c/foo", WILD_PATHNAME, false },
+  { "*/foo",    "a/b/c/foo", 0,             true  },
+  { "foo/**",   "foo/",      WILD_PATHNAME, true  },
+  { "foo/**",   "foo/a",     WILD_PATHNAME, true  },
+  { "foo/**",   "foo/a/b/c", WILD_PATHNAME, true  },
+  { "foo/*",    "foo/a/b/c", WILD_PATHNAME, false },
+  { "foo/*",    "foo/a/b/c", 0,             true  },
+  { "a/**/b",   "a/b",       0,             false },
+  { "a/**/b",   "a/b",       WILD_PATHNAME, true  },
+  { "a/**/b",   "a/x/b",     WILD_PATHNAME, true  },
+  { "a/**/b",   "a/x/y/z/b", WILD_PATHNAME, true  },
+  { "a/*/b",    "a/x/y/z/b", WILD_PATHNAME, false },
+  { "a/*/b",    "a/x/z/y/b", 0,             true  },
+  { "**/a*",    "a/b/ab",    WILD_PATHNAME, true  },
+  { "**/a*",    "a/b/a/b",   WILD_PATHNAME, false },
+
+  { "**/*/**",  "//",        WILD_PATHNAME, true  },
+  { "**/*/**",  "a//b",      WILD_PATHNAME, true  },
+  { "**/*/**",  "a/x/b",     WILD_PATHNAME, true  },
+  { "**/*/**",  "a/x/y/b",   WILD_PATHNAME, true  }, /* sic: a/|x/|y/b */
+  { "**/*/**",  "a/a//b/b",  WILD_PATHNAME, true  },
+
+  { "**/a/*/b/***/c/*/d/**", "/a//b/c//d/", WILD_PATHNAME, true },
+  { "**/a/*/b/***/c/*/d/**", "X/a/-/b/Y/c/-/d/Z", WILD_PATHNAME, true },
+  { "**/a/*/b/***/c/*/d/**", "X/X/a/-/b/Y/Y/c/-/d/Z/Z", WILD_PATHNAME, true },
 
   { 0, 0, 0, 0 }
 };
