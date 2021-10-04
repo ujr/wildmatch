@@ -196,7 +196,7 @@ applications.
 
 Two strategies: either, modify the matching logic to look at
 directory separators; or, match each path part separately.
-The implementation in [iterative.c](./iterative.c) follows
+The implementation in [iterative4.c](./iterative4.c) follows
 the first strategy.
 
 ```text
