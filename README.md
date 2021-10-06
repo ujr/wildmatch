@@ -224,6 +224,17 @@ but two in pattern) and sensible handling of more than two
 stars (treat `***` as `**`).
 The `goto` is a matter of taste but somehow fits in well.
 
+### Hidden Files
+
+By convention, files with names starting with a period
+(aka dot files) are hidden on Unix systems, that is, the
+`ls` command does not list them unless they are explicitly
+named (or a special option is specified).
+It is useful for a wildcard match to have an option `PERIOD`
+that makes it exhibit this same behaviour: an initial period
+(at start of pattern or immediately following a slash) can
+only be matched by a literal dot in the pattern.
+
 ## Comparison to Regular Expressions
 
 Wildcard pattern matching is different from and simpler

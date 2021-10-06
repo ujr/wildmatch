@@ -133,7 +133,7 @@ struct tests btests[] = {
 };
 
 void
-test_imatch_brack(void)
+test_imatch_brackets(void)
 {
   tabletests(btests);
 }
@@ -149,7 +149,7 @@ struct tests ftests[] = {
 };
 
 void
-test_imatch_fold(void)
+test_imatch_casefold(void)
 {
   tabletests(ftests);
 }
@@ -219,9 +219,43 @@ struct tests ptests[] = {
 };
 
 void
-test_imatch_path(void)
+test_imatch_pathname(void)
 {
   tabletests(ptests);
+}
+
+struct tests htests[] = {
+  { "*.c",    ".foo.c",  0,                         true  },
+  { "*.c",    "foo.c",   WILD_PERIOD,               true  },
+  { "*.c",    ".foo.c",  WILD_PERIOD,               false },
+  { ".*.c",   ".foo.c",  WILD_PERIOD,               true  },
+  { "?foo",   ".foo",    WILD_PERIOD,               false },
+  { "[.]foo", ".foo",    WILD_PERIOD,               false },
+  /* wildcards match period in non-initial position */
+  { "b?c",    "b.c",     WILD_PERIOD|WILD_PATHNAME, true  },
+  { "b*c",    "b.c",     WILD_PERIOD|WILD_PATHNAME, true  },
+  { "b[.]c",  "b.c",     WILD_PERIOD|WILD_PATHNAME, true  },
+  /* but in initial position, only a literal dot matches */
+  { "a/*",    "a/.b.c",  WILD_PERIOD,               true  },
+  { "a/*",    "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "a/?*",   "a/.b.c",  WILD_PERIOD,               true  },
+  { "a/?*",   "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "a/[.]*", "a/.b.c",  WILD_PERIOD,               true  },
+  { "a/[.]*", "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "*/*",    "a/.b.c",  WILD_PERIOD,               true  },
+  { "*/*",    "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "*/?*",   "a/.b.c",  WILD_PERIOD,               true  },
+  { "*/?*",   "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "*/[.]*", "a/.b.c",  WILD_PERIOD,               true  },
+  { "*/[.]*", "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
+  { "*/.?*",  "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, true  },
+  { 0, 0, 0, 0 }
+};
+
+void
+test_imatch_period(void)
+{
+  tabletests(htests);
 }
 
 int
@@ -236,15 +270,10 @@ main(void)
 
   TEST_HEADING("Testing iterative wildcard match");
   TEST_RUN(test_imatch);
-
-  TEST_HEADING("Testing iterative wildcard match with brackets");
-  TEST_RUN(test_imatch_brack);
-
-  TEST_HEADING("Testing iterative matching with case folding");
-  TEST_RUN(test_imatch_fold);
-
-  TEST_HEADING("Testing iterative wildcard match for paths");
-  TEST_RUN(test_imatch_path);
+  TEST_RUN(test_imatch_brackets);
+  TEST_RUN(test_imatch_casefold);
+  TEST_RUN(test_imatch_pathname);
+  TEST_RUN(test_imatch_period);
 
   return TEST_END();
 }

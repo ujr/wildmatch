@@ -3,6 +3,7 @@
 
 #define WILD_CASEFOLD 1
 #define WILD_PATHNAME 2
+#define WILD_PERIOD   4
 
 int wildmatch(const char *pat, const char *str, int flags);
 
