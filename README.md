@@ -234,6 +234,7 @@ It is useful for a wildcard match to have an option `PERIOD`
 that makes it exhibit this same behaviour: an initial period
 (at start of pattern or immediately following a slash) can
 only be matched by a literal dot in the pattern.
+File [iterative5.c](./iterative5.c) contains an implementation.
 
 ## Comparison to Regular Expressions
 
