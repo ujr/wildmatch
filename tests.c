@@ -258,6 +258,11 @@ struct tests htests[] = {
   { "*/[.]*", "a/.b.c",  WILD_PERIOD,               true  },
   { "*/[.]*", "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, false },
   { "*/.?*",  "a/.b.c",  WILD_PERIOD|WILD_PATHNAME, true  },
+  /* the two default directory entries */
+  { ".*",     ".",       WILD_PERIOD|WILD_PATHNAME, true  },
+  { ".*",     "..",      WILD_PERIOD|WILD_PATHNAME, true  },
+  { "**/.*",  "foo/.",   WILD_PERIOD|WILD_PATHNAME, true  },
+  { "**/.*",  "foo/..",  WILD_PERIOD|WILD_PATHNAME, true  },
   { 0, 0, 0, 0 }
 };
 

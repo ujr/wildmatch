@@ -75,7 +75,7 @@ bool rmatch(const char *pat, const char *str)
 ```
 
 This implementation can be found in the
-[recursive.c](./recursive.c) file.
+[recursive.c](./stages/recursive.c) file.
 
 Recursion depth can get as deep as the string is long,
 but no deeper. Still this is highly undesirable and
@@ -142,8 +142,8 @@ after matching `*abcX` against `abcZ`, resuming with
 is a match, it must be after the `Z` in *str*.
 
 Likely there are other algorithms, but the one above
-was “stretchy” enough for my mind. An implementation
-can be found in the [iterative1.c](./iterative1.c) file.
+was “stretchy” enough for my mind. An implementation can
+be found in the [iterative1.c](./stages/iterative1.c) file.
 
 ## Bells and Whistles
 
@@ -171,14 +171,15 @@ then the class matches any single character *not* in the class.
 A practical consideration is how to deal with unclosed character
 classes like `[abc`. While an error is a possible solution, it is
 probably more useful to treat such constructs as ordinary pattern
-characters. File [iterative2.c](./iterative2.c) has an implementation.
+characters.
+File [iterative2.c](./stages/iterative2.c) has an implementation.
 
 ### Ignoring Case
 
 Ignoring case is sometimes useful, but not always, so this is an
 option, `CASEFOLD`. It is implemented by folding upper case to
-lower case (or vice versa) before comparison.
-An implementation can be found in [iterative3.c](./iterative3.c).
+lower case (or vice versa) before comparison. An implementation
+can be found in [iterative3.c](./stages/iterative3.c).
 
 Two strategies: either, fold both pattern and string to, say,
 lower case; or, compare original pattern against both upper'ed
@@ -197,8 +198,8 @@ applications.
 
 Two strategies: either, modify the matching logic to look at
 directory separators; or, match each path part separately.
-The implementation in [iterative4.c](./iterative4.c) follows
-the first strategy.
+The implementation in [iterative4.c](./stages/iterative4.c)
+follows the first strategy.
 
 ```text
 str:   abcxy       abc/xy    abc/xy         the tilde ~
@@ -235,7 +236,7 @@ It is useful for a wildcard match to have an option `PERIOD`
 that makes it exhibit this same behaviour: an initial period
 (at start of pattern or immediately following a slash) can
 only be matched by a literal dot in the pattern.
-File [iterative5.c](./iterative5.c) contains an implementation.
+File [iterative5.c](./stages/iterative5.c) contains an implementation.
 
 ### UTF-8
 
@@ -271,7 +272,8 @@ int decode(void *buf, int *pc);
 writing the character to `*pc` and returning the number
 of bytes decoded, or 0 on end of input, or -1 on error.
 
-An implementation can be found in [iterative.c](./iterative.c).
+An implementation can be found in the
+[iterative6.c](./stages/iterative6.c) file.
 
 ## Comparison to Regular Expressions
 
