@@ -79,8 +79,14 @@ struct tests itests[] = {
   { "**",   "",      0,  true  },
   { "?",    "",      0,  false },
 
+  { "?",    "x",     0,  true  },
+  { "?",    "xx",    0,  false },
+  { "*",    "x",     0,  true  },
+  { "*",    "xx",    0,  true  },
+
   { "*?",   "",      0,  false },
   { "*?",   "x",     0,  true  },
+  { "*?",   "xx",    0,  true  },
   { "*?",   "xxx",   0,  true  },
 
   { "?*",   "",      0,  false },
@@ -103,6 +109,9 @@ struct tests itests[] = {
   { "a*x*b", "ab",        0,  false },
   { "a*x*b", "abxbab",    0,  true  },
   { "s*no*", "salentino", 0,  true  },
+  { "*sip*", "mississippi", 0, true  },
+  { "-*-*-*-", "-foo-bar-baz-", 0, true },
+
   { 0, 0, 0, 0 }
 };
 
@@ -139,12 +148,12 @@ test_imatch_brackets(void)
 }
 
 struct tests ftests[] = {
-  { "abc",       "aBc",     WILD_CASEFOLD, true },
-  { "a[xy]b",    "aXb",     0,             false},
-  { "a[xy]b",    "aXb",     WILD_CASEFOLD, true },
-  { "*X*[yY]?*", "xyz",     0,             false},
-  { "*X*[yY]?*", "xyz",     WILD_CASEFOLD, true },
-  { "*X*[yY]?*", "-x-Y-z-", WILD_CASEFOLD, true },
+  { "abc",       "aBc",     WILD_CASEFOLD, true  },
+  { "a[xy]b",    "aXb",     0,             false },
+  { "a[xy]b",    "aXb",     WILD_CASEFOLD, true  },
+  { "*X*[yY]?*", "xyz",     0,             false },
+  { "*X*[yY]?*", "xyz",     WILD_CASEFOLD, true  },
+  { "*X*[yY]?*", "-x-Y-z-", WILD_CASEFOLD, true  },
   { 0, 0, 0, 0 }
 };
 

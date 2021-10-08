@@ -83,16 +83,17 @@ calls for an iterative implementation.
 
 ## Iterative Matching
 
-Any `*` in the pattern ends a segment of characters that
-must match 1:1, whereas the `*` can “stretch” as needed
-so as to find a match for the following segment.
+Conceptually, the `*` wildcards cut the pattern into segments.
+Each segment must match 1:1, whereas the `*` can “stretch” as
+needed so as to find a match for the immediately following
+segment (and not looking any farther).
 
-The initial segment (before the first `*`) must match 1:1
-and if it does not, the whole pattern does not match.
+If the initial segment (before the first `*`) does not match,
+the whole pattern does not match.
 
 If any of the following segments does not match, try
 again but resume one character later in the string
-(conceptually we stretch the previous `*` by one character).
+(conceptually stretching the previous `*` by one character).
 
 ```C
 bool imatch(const char *pat, const char *str)
@@ -149,7 +150,7 @@ can be found in the [iterative1.c](./iterative1.c) file.
 - character classes like `[abc]`
 - option to ignore case (case folding)
 - path names: wildcards do not match `/` (path separator)
-- path names: new wildcard `**` that does match `/`
+- path names: new wildcard `**` that any number of directories
 - hidden files: leading dot is only matched by leading dot
 - utf-8: multibyte encoding, possibility for invalid encoding
 
@@ -165,7 +166,7 @@ denotes the set of all hex characters `0123456789ABCDEFabcdef`.
 To include a literal dash in the character class, place it at
 the very beginning of the very end of the class. If a character
 class begins with a `!` (in some implementations also with a `^`),
-then the class matches any single character that is not in the class.
+then the class matches any single character *not* in the class.
 
 A practical consideration is how to deal with unclosed character
 classes like `[abc`. While an error is a possible solution, it is
@@ -272,8 +273,6 @@ of bytes decoded, or 0 on end of input, or -1 on error.
 
 An implementation can be found in [iterative.c](./iterative.c).
 
-[utf8]: https://en.wikipedia.org/wiki/UTF-8
-
 ## Comparison to Regular Expressions
 
 Wildcard pattern matching is different from and simpler
@@ -285,7 +284,32 @@ can be expressed as regex patterns (but not the other way):
 - the wildcard `[...]` corresponds to the regex `[...]`
 - the wildcard `[!...]` corresponds to the regex `[^...]`
 
+## Conclusion
+
+Why write wildcard matching yourself? At least on Unix systems
+there is a library method [fnmatch] that does the same thing
+(though it does not usually support the `**` wildcard).
+There is nothing wrong using it. You write it yourself
+for some fun, insight, and your own bugs.
+
+Missing here is a performance evaluation.
+
+Wildcard matching is sometimes also known as glob matching,
+after the ancient Unix tool */etc/glob* (short for global)
+that did wildcard matching against the filesystem, before
+this became built-in functionality of the shell.
+
+The recursive algorithm presented here is commonplace.
+The iterative algorithm was inspired by the one
+by Kirk J. Krauss, presented as
+[Matching Wildcards: An Algorithm][ddj] on August 26, 2008,
+in (now discontinued) Dr. Dobbs Journal.
+
 ## License
 
 Dedicated to the public domain
 (see the [UNLICENSE](./UNLICENSE) file).
+
+[utf8]: https://en.wikipedia.org/wiki/UTF-8
+[fnmatch]: https://linux.die.net/man/3/fnmatch
+[ddj]: https://www.drdobbs.com/architecture-and-design/matching-wildcards-an-algorithm/210200888
