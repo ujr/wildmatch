@@ -12,6 +12,43 @@
 
 static bool debug = 0;
 
+/** return nbytes, 0 on end, -1 on error */
+static int
+decode(const void *p, int *pc)
+{
+  const int replacement = 0xFFFD;
+  const unsigned char *s = p;
+  if (s[0] < 0x80) {
+    *pc = s[0];
+    return *pc ? 1 : 0;
+  }
+  if ((s[0] & 0xE0) == 0xC0) {
+    *pc = (int)(s[0] & 0x1F) << 6
+        | (int)(s[1] & 0x3F);
+    return 2;
+  }
+  if ((s[0] & 0xF0) == 0xE0) {
+    *pc = (int)(s[0] & 0x0F) << 12
+        | (int)(s[1] & 0x3F) << 6
+        | (int)(s[2] & 0x3F);
+    /* surrogate pairs not allowed in UTF8 */
+    if (0xD800 <= *pc && *pc <= 0xDFFF)
+      *pc = replacement;
+    return 3;
+  }
+  if ((s[0] & 0xF8) == 0xF0 && (s[0] <= 0xF4)) {
+    /* 2nd cond: not greater than 0x10FFFF */
+    *pc = (int)(s[0] & 0x07) << 18
+        | (int)(s[1] & 0x3F) << 12
+        | (int)(s[2] & 0x3F) << 6
+        | (int)(s[3] & 0x3F);
+    return 4;
+  }
+  *pc = replacement;
+  /*errno = EILSEQ;*/
+  return -1;
+}
+
 static size_t
 scanbrack(const char *pat)
 {
@@ -26,6 +63,7 @@ scanbrack(const char *pat)
 static bool
 matchbrack(const char *pat, int sc, int folded)
 {
+  int pc;
   bool compl = false;
   if (*pat == '!') {
     compl = true;
@@ -41,16 +79,22 @@ matchbrack(const char *pat, int sc, int folded)
       return !compl;
     pat++;
   }
-  for (; *pat != ']'; pat++) {
+  for (pc = pat[-1]; *pat != ']'; pat++) {
     if (pat[0] == '-' && pat[1] != ']') {
-      int lo = pat[-1], hi = pat[1];
+      int lo=pc, hi, n=decode(pat+1, &hi);
+      if (n < 0) return false;
+      pat += n;
       if ((lo <= sc && sc <= hi) ||
           (lo <= folded && folded <= hi))
         return !compl;
-      pat++;
     }
-    else if (*pat == sc || *pat == folded)
-      return !compl;
+    else {
+      int n=decode(pat, &pc);
+      if (n < 0) return false;
+      pat += n-1;
+      if (pc == sc || pc == folded)
+        return !compl;
+    }
   }
   return compl;
 }
@@ -66,31 +110,36 @@ static bool
 imatch(const char *pat, const char *str, int flags)
 {
   const char *p, *s;
-  const char *p0 = pat, *s0 = str;
-  char pc, sc, folded;
+  const char *p0 = pat;
+  int pc, sc, folded, prev = 0, l;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
   bool hidden = flags & WILD_PERIOD;
   bool matchslash, preslash;
 
-  /* match up to first * in pat */
-
   if (hidden) {
     if (*str == '.' && *pat != '.')
       return false;
   }
 
+  /* match up to first * in pat */
+
   for (;;) {
-    pc = *pat++;
+    l = decode(pat, &pc);
+    if (l < 0) return false;
+    pat += l;
     if (pc == '*')
       goto entry;
-    sc = *str++;
+    prev = sc;
+    l = decode(str, &sc);
+    if (l < 0) return false;
+    str += l;
     if (sc == 0)
       return pc == 0 ? true : false;
     if (sc == '/' && sc != pc && path)
       return false;
-    if (sc == '.' && sc != pc && hidden && path && str > s0+1 && str[-2] == '/')
+    if (sc == '.' && sc != pc && hidden && path && prev == '/')
       return false;
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
@@ -110,7 +159,9 @@ imatch(const char *pat, const char *str, int flags)
   for (;;) {
     if (debug)
       fprintf(stderr, "s=%s\tp=%s\n", str, pat);
-    pc = *pat++;
+    l = decode(pat, &pc);
+    if (l < 0) return false;
+    pat += l;
     if (pc == '*') {
 entry:
       matchslash = false;
@@ -122,20 +173,24 @@ entry:
       s = str;
       continue;
     }
-    sc = *str++;
+    prev = sc;
+    l = decode(str, &sc);
+    if (l < 0) return false;
+    str += l;
     if (sc == 0)
       return pc == 0 ? true : false;
     if (sc == '/' && sc != pc && path && !matchslash)
       return false; /* only a slash can match a slash */
-    if (sc == '.' && sc != pc && hidden && path && str > s0+1 && str[-2] == '/')
-      return false; /* only a literal dot can match a dot in initial position */
+    if (sc == '.' && sc != pc && hidden && path && prev == '/')
+      return false; /* only a literal dot can match an initial dot */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
       if (!matchbrack(pat, sc, folded)) {
         if (*s == '/' && path && !matchslash)
           return false; /* cannot stretch across slash */
         pat = p;
-        str = ++s;
+        str = s += decode(s, &pc);
+        prev = 0;
       }
       else pat += n;
       continue;
@@ -144,7 +199,8 @@ entry:
       if (*s == '/' && path && !matchslash)
         return false; /* cannot stretch across slash */
       pat = p;
-      str = ++s;
+      str = s += decode(s, &pc);
+      prev = 0;
       continue;
     }
   }

@@ -258,6 +258,22 @@ test_imatch_period(void)
   tabletests(htests);
 }
 
+/* assume this file is UTF-8 encoded */
+struct tests utests[] = {
+  { "“ä-ö-ü-€”",  "“ä-ö-ü-€”",  0,  true },
+  { "“?-?-?-?”",  "“ä-ö-ü-€”",  0,  true },
+  { "?*€?",       "“ä-ö-ü-€”",  0,  true },
+  { "?*[•€]?",    "“ä-ö-ü-€”",  0,  true },
+  { "П*й?*?й", "Пётр Ильи́ч Чайко́вский", 0, true },
+  { 0, 0, 0, 0 }
+};
+
+void
+test_imatch_utf(void)
+{
+  tabletests(utests);
+}
+
 int
 main(void)
 {
@@ -274,6 +290,7 @@ main(void)
   TEST_RUN(test_imatch_casefold);
   TEST_RUN(test_imatch_pathname);
   TEST_RUN(test_imatch_period);
+  TEST_RUN(test_imatch_utf);
 
   return TEST_END();
 }

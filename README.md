@@ -183,7 +183,7 @@ Two strategies: either, fold both pattern and string to, say,
 lower case; or, compare original pattern against both upper'ed
 and lower'ed string characters (one or the other must match).
 
-## Path Name Specials
+### Path Name Specials
 
 Wildcard pattern matching is most frequently used with file path
 names, and in this case, it is more useful if the wildcards do
@@ -235,6 +235,44 @@ that makes it exhibit this same behaviour: an initial period
 (at start of pattern or immediately following a slash) can
 only be matched by a literal dot in the pattern.
 File [iterative5.c](./iterative5.c) contains an implementation.
+
+### UTF-8
+
+The wildcard matcher so far compares bytes, not characters.
+For single-byte character sets like ASCII this is no problem.
+But nowadays, Unicode, encoded with UTF-8, is prevalent.
+[UTF-8][utf8] encodes each Unicode character in one or more
+bytes. For example, `A` is encoded as `41` hex (one byte),
+and `€` is encoded as `E2 82 AC` hex (three bytes).
+
+For matching literal characters, no changes are needed: UTF-8
+just works. However, wildcards are supposed to match characters,
+not bytes, so must *decode* byte(s) to a character.
+
+This means we replace assignments like `pc = *pat++` by calls
+to a UTF-8 decoding routine, and also the `str = ++s` assignments
+must must be changed to consider the number of bytes of the
+character at `s`. The back references `str[-2]` look suspicious,
+but indeed can stay unchanged, because we know the two previous
+characters have been encoded in one byte. Not any sequence of
+bytes is a valid UTF-8 encoding, so the decoding routine may
+signal an error; in this case it is probably best to skip
+forward to the next byte in range 0..127, that is, the next
+valid starting byte in the UTF-8 sequence; alternatively,
+we could return an error flag (instead of true/false).
+
+The decoder could have a signature similar to
+
+```c
+int decode(void *buf, int *pc);
+```
+
+writing the character to `*pc` and returning the number
+of bytes decoded, or 0 on end of input, or -1 on error.
+
+An implementation can be found in [iterative.c](./iterative.c).
+
+[utf8]: https://en.wikipedia.org/wiki/UTF-8
 
 ## Comparison to Regular Expressions
 
