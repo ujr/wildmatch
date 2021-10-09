@@ -138,6 +138,10 @@ struct tests btests[] = {
   { "a[b",          "a[b",  0, true  }, /* unclosed cc: literal */
   { "-O[0123]",     "-O3",  0, true  },
   { "-O[0123]",     "-O4",  0, false },
+  { "a[^0-9]",      "ax",   0, true  },
+  { "a[^0-9]",      "a3",   0, false },
+  { "[!^]",         "^",    0, false },
+  { "[^!]",         "!",    0, false },
   { 0, 0, 0, 0 }
 };
 

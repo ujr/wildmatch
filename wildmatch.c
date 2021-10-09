@@ -74,7 +74,7 @@ scanbrack(const char *pat)
 {
   /* assume opening bracket at pat[-1] */
   size_t n = 0;
-  if (pat[n] == '!') n++; /* complement of class */
+  if (pat[n] == '!' || pat[n] == '^') n++; /* complement of class */
   if (pat[n] == ']') n++; /* ordinary at start of class */
   while (pat[n] && pat[n] != ']') n++; /* scan for end */
   return pat[n] ? n+1 : 0; /* return length if found, 0 if not */
@@ -85,7 +85,7 @@ matchbrack(const char *pat, int sc, int folded)
 {
   int pc;
   bool compl = false;
-  if (*pat == '!') {
+  if (*pat == '!' || *pat == '^') {
     compl = true;
     pat++;
   }
