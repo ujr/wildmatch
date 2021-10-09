@@ -10,6 +10,28 @@
 
 #include "wildmatch.h"
 
+/* About UTF-8
+ *
+ *   First       Cont'n     Value
+ *   Byte        Bytes      Range
+ *   0xxx xxxx     0          0..127
+ *   10xx xxxx   error                    (1)
+ *   110x xxxx     1        128..2047
+ *   1110 xxxx     2       2048..65535    (2)
+ *   1111 0xxx     3      65536..1114111  (3)
+ *   1111 10xx   error
+ *
+ * (1) continuation bytes are 10xx xxxx (6 bits payload)
+ * (2) values 55296..57343 (UTF-16 surrogate pairs) are not allowed
+ * (3) 1114111 = 10FFFF hex is the maximum value
+ *
+ * For details see RFC 3629 and consult Wikipedia.
+ *
+ * The decoder below is straightforward, but probably inefficient,
+ * does not check continuation bytes, and does not reject overlong
+ * sequences; look for better solutions, but not today.
+ */
+
 /** return nbytes, 0 on end, -1 on error */
 static int
 decode(const void *p, int *pc)

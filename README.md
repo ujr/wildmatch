@@ -294,7 +294,8 @@ there is a library method [fnmatch] that does the same thing
 There is nothing wrong using it. You write it yourself
 for some fun, insight, and your own bugs.
 
-Missing here is a performance evaluation.
+- Missing here is a performance evaluation.
+- UTF-8 decoding should be improved and factored out
 
 Wildcard matching is sometimes also known as glob matching,
 after the ancient Unix tool */etc/glob* (short for global)
