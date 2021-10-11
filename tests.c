@@ -1,7 +1,10 @@
 /* Unit Tests */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "wildmatch.h"
@@ -294,6 +297,65 @@ test_imatch_utf(void)
   tabletests(utests);
 }
 
+static void
+countlines(const char *pat, const char *file, long *pm, long *pn)
+{
+  char buf[256];
+  int flags = WILD_CASEFOLD;
+  long n = 0, m = 0;
+  FILE *fp = fopen(file, "r");
+  if (!fp)
+    TEST_ABORT("cannot open %s: %s", file, strerror(errno));
+  while (fgets(buf, sizeof buf, fp)) {
+    int r = wildmatch(pat, buf, flags);
+    if (r) m += 1;
+    n += 1;
+  }
+  fclose(fp);
+  *pm = m;
+  *pn = n;
+}
+
+static bool
+wholefile(const char *pat, const char *file)
+{
+  FILE *fp;
+  char *str;
+  size_t n = 4*1024*1024;
+  bool r;
+
+  if (!(str = malloc(n)))
+    TEST_ABORT("out of memory");
+  if (!(fp = fopen(file, "r"))) {
+    free(str);
+    TEST_ABORT("cannot open %s: %s", file, strerror(errno));
+  }
+  n = fread(str, 1, n-1, fp);
+  str[n] = '\0';
+  r = wildmatch(pat, str, WILD_CASEFOLD);
+  fclose(fp);
+  free(str);
+  return r;
+}
+
+void
+test_imatch_perf(void)
+{
+  long m, n;
+  const char *dict = "/usr/share/dict/words";
+  int r;
+
+  countlines("*es*?", dict, &m, &n);
+  TEST_INFO("pat *es*? in %s: %ld matching, %ld total lines", dict, m, n);
+  countlines("*e*e*e*", dict, &m, &n);
+  TEST_INFO("pat *e*e*e* in %s: %ld matching, %ld total lines", dict, m, n);
+  countlines("*s*m*b*", dict, &m, &n);
+  TEST_INFO("pat *s*m*b* in %s: %ld matching, %ld total lines", dict, m, n);
+
+  r = wholefile("*abby*zoom*", dict);
+  TEST_INFO("pat *abby*zoom* in %s: %s", dict, r ? "found" : "missed");
+}
+
 int
 main(void)
 {
@@ -311,6 +373,9 @@ main(void)
   TEST_RUN(test_imatch_pathname);
   TEST_RUN(test_imatch_period);
   TEST_RUN(test_imatch_utf);
+
+  TEST_HEADING("Wildmatch performance");
+  TEST_RUN(test_imatch_perf);
 
   return TEST_END();
 }
