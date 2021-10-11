@@ -38,6 +38,7 @@ static struct testing T;
 static void
 print_loc_ln(const char *file, long line)
 {
+  printf(" "); /* separate from preceding */
   if (T.use_color) printf("%s", ANSIDIM);
   printf("(%s:%ld)", file, line);
   if (T.use_color) printf("%s", ANSIOFF);
@@ -81,9 +82,9 @@ test_heading(const char *file, long line, const char *msg)
 {
   if (!msg || !*msg) msg = "(heading)";
   if (T.use_color)
-    printf("%s%s%s ", ANSIBOLD, msg, ANSIOFF);
+    printf("%s%s%s", ANSIBOLD, msg, ANSIOFF);
   else
-    printf("## %s ", msg);
+    printf("## %s", msg);
   print_loc_ln(file, line);
   fflush(stdout);
 }
@@ -103,13 +104,13 @@ test_run(const char *file, long line, test_fun fun, const char *name)
   t1 = clock();
   if (T.cur_test_failed) {
     T.num_failed += 1;
-    fmt = T.use_color ? "%s " ANSIRED "FAIL" ANSIOFF " (%ld ms) " : "%s FAIL (%ld ms) ";
-    printf(fmt, name, (long)(t1-t0));
+    fmt = T.use_color ? "%s " ANSIRED "FAIL" ANSIOFF " (%.5g ms)" : "%s FAIL (%.5g ms)";
+    printf(fmt, name, (double)(t1-t0)*1000/CLOCKS_PER_SEC);
     print_loc_ln(file, line);
   }
   else {
-    fmt = T.use_color ? "%s " ANSIGREEN "PASS" ANSIOFF " (%ld ms) " : "%s PASS (%ld ms) ";
-    printf(fmt, name, (long)(t1-t0));
+    fmt = T.use_color ? "%s " ANSIGREEN "PASS" ANSIOFF " (%.5g ms)" : "%s PASS (%.5g ms)";
+    printf(fmt, name, (double)(t1-t0)*1000/CLOCKS_PER_SEC);
     print_loc_ln(file, line);
   }
   fflush(stdout);
@@ -122,17 +123,20 @@ test_ignore(const char *file, long line, const char *name)
   T.num_tests += 1;
   T.num_ignored += 1;
   T.cur_test_name = name;
-  fmt = T.use_color ? "%s " ANSIYELLOW "IGNORED" ANSIOFF " " : "%s IGNORED ";
+  fmt = T.use_color ? "%s " ANSIYELLOW "IGNORED" ANSIOFF : "%s IGNORED";
   printf(fmt, name);
   print_loc_ln(file, line);
   fflush(stdout);
 }
 
 void
-test_fail(const char *file, long line, const char *msg)
+test_fail(const char *file, long line, const char *fmt, ...)
 {
+  va_list ap;
   T.cur_test_failed = 1;
-  printf("- %s failed ", msg);
+  va_start(ap, fmt);
+  vprintf(fmt, ap);
+  va_end(ap);
   print_loc_ln(file, line);
   fflush(stdout);
   if (T.abort_on_fail)
@@ -140,11 +144,14 @@ test_fail(const char *file, long line, const char *msg)
 }
 
 void
-test_abort(const char *file, long line, const char *msg)
+test_abort(const char *file, long line, const char *fmt, ...)
 {
   T.cur_test_failed = 1; /* abort implies fail */
-  if (msg) {
-    printf("- %s ", msg);
+  if (fmt) {
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    va_end(ap);
     print_loc_ln(file, line);
     fflush(stdout);
   }
@@ -160,7 +167,7 @@ test_info(const char *file, long line, const char *fmt, ...)
   va_start(ap, fmt);
   vprintf(fmt, ap);
   va_end(ap);
-  if (T.use_color) printf(" %s", ANSIOFF);
+  if (T.use_color) printf("%s", ANSIOFF);
   print_loc_ln(file, line);
   fflush(stdout);
 }

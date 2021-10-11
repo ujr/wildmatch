@@ -60,7 +60,7 @@ tabletests(struct tests *tests)
       snprintf(buf, sizeof buf,
         "match pat=(%s), str=(%s), flags=%d -- r=%d x=%d",
         tests[i].pat, tests[i].str, tests[i].flags, r, x);
-      test_fail(__FILE__, __LINE__, buf);
+      test_fail(__FILE__, __LINE__, "- %s failed", buf);
     }
   }
 }
