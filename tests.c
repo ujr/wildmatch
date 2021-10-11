@@ -286,8 +286,8 @@ struct tests utests[] = {
   { "?*€?",       "“ä-ö-ü-€”",  0,  true },
   { "?*[•€]?",    "“ä-ö-ü-€”",  0,  true },
   { "П*й?*?й", "Пётр Ильи́ч Чайко́вский", 0, true },
-  /* overlong encodings should be rejected, but at present are not: */
-  { "A\xC0\x80Z", "A", 0, true }, /* should not match, but presently does */
+  /* C0 80 is an overlong (and thus invalid) encoding for U+0000 */
+  { "A\xC0\x80Z", "A", 0, false },
   { 0, 0, 0, 0 }
 };
 
