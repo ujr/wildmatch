@@ -102,8 +102,9 @@ matchbrack(const char *pat, int sc, int folded)
   }
   for (pc = pat[-1]; *pat != ']'; ) {
     if (pat[0] == '-' && pat[1] != ']') {
+      int lo, hi;
       pat++; /* skip the dash */
-      int lo=pc, hi=utf8get(&pat);
+      lo=pc, hi=utf8get(&pat);
       if ((lo <= sc && sc <= hi) ||
           (lo <= folded && folded <= hi))
         return !compl;
@@ -129,7 +130,7 @@ imatch(const char *pat, const char *str, int flags)
 {
   const char *p, *s;
   const char *p0 = pat;
-  int pc, sc, folded, prev = 0;
+  int pc, sc, folded, prev;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
@@ -142,6 +143,8 @@ imatch(const char *pat, const char *str, int flags)
   }
 
   /* match up to first * in pat */
+
+  pc = sc = prev = 0;
 
   for (;;) {
     pc = utf8get(&pat);

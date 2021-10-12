@@ -1,4 +1,6 @@
 
+#define _POSIX_C_SOURCE 2L  /* for getopt and fileno */
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>

@@ -1,5 +1,8 @@
 /* Unit Tests */
 
+#define _POSIX_C_SOURCE 1 /* for fileno(3) */
+#define _XOPEN_SOURCE 500 /* for snprintf(3) */
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>

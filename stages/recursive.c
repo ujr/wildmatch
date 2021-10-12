@@ -7,12 +7,12 @@
 bool
 rmatch(const char *pat, const char *str)
 {
-  // end of pat only matches end of str:
+  /* end of pat only matches end of str: */
   if (*pat == 0)
     return *str == 0;
 
-  // match remainder of pat against ever shorter suffixes
-  // of str, including the empty string (if i == n below):
+  /* match remainder of pat against ever shorter suffixes
+   * of str, including the empty string (if i == n below): */
   if (*pat == '*') {
     size_t i, n = strlen(str);
     for (i = 0; i <= n; i++)
@@ -21,14 +21,14 @@ rmatch(const char *pat, const char *str)
     return false;
   }
 
-  // ? does not match the empty string:
+  /* ? does not match the empty string: */
   if (*pat == '?') {
     if (*str == 0) return false;
   }
-  // compare literal characters:
+  /* compare literal characters: */
   else if (*pat != *str) return false;
 
-  // match remainder of pat against remainder of str:
+  /* match remainder of pat against remainder of str: */
   return rmatch(pat+1, str+1);
 }
 
