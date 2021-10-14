@@ -1,6 +1,7 @@
 # Wildcard Pattern Matching
 
-(The manual is at end of this document.)
+(The manual for the final version is
+in [wildmatch.md](./wildmatch.md)).
 
 It is a feature found in many pieces of software:
 match a string against a pattern that can contain
@@ -265,14 +266,16 @@ forward to the next byte in range 0..127, that is, the next
 valid starting byte in the UTF-8 sequence; alternatively,
 we could return an error flag (instead of true/false).
 
-The decoder could have a signature similar to
+The decoder could have a signature similar to these
 
 ```c
 int decode(void *buf, int *pc);
+int decode(const unsigned char **ppz);
 ```
 
-writing the character to `*pc` and returning the number
-of bytes decoded, or 0 on end of input, or -1 on error.
+where the first writes the decoded character to `*pc` and
+returns the number of bytes read, and the second returns
+the decoded character and increments the pointer given.
 
 An implementation can be found in the
 [iterative6.c](./stages/iterative6.c) file.
@@ -291,8 +294,8 @@ can be expressed as regex patterns (but not the other way):
 ## Conclusion
 
 Why write wildcard matching yourself? At least on Unix systems
-there is a library method [fnmatch] that does the same thing
-(though it does not usually support the `**` wildcard).
+there is a library method [fnmatch][fnmatch] that does the same
+thing (though it does not usually support the `**` wildcard).
 There is nothing wrong using it. You write it yourself
 for some fun, insight, and your own bugs.
 
@@ -310,49 +313,9 @@ by Kirk J. Krauss, presented as
 [Matching Wildcards: An Algorithm][ddj] on August 26, 2008,
 in (now discontinued) Dr. Dobbs Journal.
 
-## Manual
-
-The files [wildmatch.h](./wildmatch.h) and [wildmatch.c](./wildmatch.c)
-implement wildcard matching. The interface consists of a single
-function, `wildmatch(pat, str, flags)` returning true (non-zero)
-if `pat` matches `str` and false (zero) otherwise. All characters in
-the pattern match themselves, with the exception of these wildcards:
-
-- `*` match zero or more characters
-- `?` match any one character
-- `[...]` match one character from the given class of characters
-- `**` match zero or more directory names (only with PATHNAME option)
-
-A character class can contain ranges like `0-9` as an
-abbreviation for all characters with ordinal values between
-the two boundaries (both inclusive).
-If a character class begins with `!` or `^` it matches any
-character *not* in the class. To include a closing bracket
-in a character class, make it the first character in the
-class like `[]abc]` or `[!]abc]`. An opening bracket may
-occur at any place in the character class.
-
-The *flags* parameter is either `0` or an additive combination
-of these options:
-
-- CASEFOLD to ignore case (only for letters in the ASCII range)
-- PATHNAME to stop wildcards from matching `/` characters
-- PERIOD to stop wildcards from matching leading `.` characters
-
-The PATHNAME option is useful when matching file paths:
-a pattern like `*.txt` will then match a filename, not an
-an entire file path. With the PATHNAME option, the `**`
-wildcard matches zero or more directory names (bounded
-by `/` characters); it does not match partial directory
-names.
-
-The PERIOD option is used to *not* match files or directories
-whose name begins with a period. Such files are also called
-dot files and are “hidden” (not listed) on Unix-like systems.
-
-Note that the backslash `\` is *not* an escape character
-(as it is with fnmatch(3) by default); to turn off a
-character's special meaning, put it in a character class.
+The final version of the iterative algorithm is described
+in [wildmatch.md](./wildmatch.md) and implemented in
+[wildmatch.h](./wildmatch.h) and [wildmatch.c](./wildmatch.c).
 
 ## License
 

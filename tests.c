@@ -289,8 +289,22 @@ struct tests utests[] = {
   { "?*€?",       "“ä-ö-ü-€”",  0,  true },
   { "?*[•€]?",    "“ä-ö-ü-€”",  0,  true },
   { "П*й?*?й", "Пётр Ильи́ч Чайко́вский", 0, true },
+  { "*μ*μ?",   "Καλημέρα κόσμε", 0, true },
+  { "*[𝄞]*?",  "clef𝄞treble𝄞", 0, true }, /* U+1D11E encodes in 4 bytes */
+
+  /* The following test cases present invalid UTF-8 encodings
+     and the tests are specific to our decoder implementation;
+     other UTF-8 decoders may respond differently! */
+
   /* C0 80 is an overlong (and thus invalid) encoding for U+0000 */
   { "A\xC0\x80Z", "A", 0, false },
+
+  /* C0 requires 1 continuation byte, here we give many more: */
+  { "\xC0\x80\x80\x80\x80\x80\x41Z", "AZ", 0, false },
+
+  /* However, our decoder accepts overlong encodings of other chars. */
+  /* Here is an overlong encoding of U+00C6 or Æ */
+  { "\xC0\x80\x80\x80\x83\x86skulap", "Æskulap", 0, true },
   { 0, 0, 0, 0 }
 };
 
