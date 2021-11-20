@@ -7,7 +7,7 @@ It is a feature found in many pieces of software:
 match a string against a pattern that can contain
 “wildcards”, usually `?` and `*`.
 
-- a `?` matches any *single* character
+- a `?` matches any single character
 - a `*` matches any *sequence* of characters,
   including the empty sequence
 - all other characters match themselves
@@ -152,8 +152,8 @@ be found in the [iterative1.c](./stages/iterative1.c) file.
 
 - character classes like `[abc]`
 - option to ignore case (case folding)
-- path names: wildcards do not match `/` (path separator)
-- path names: new wildcard `**` that any number of directories
+- path names: wildcards must not match `/` (the path separator)
+- path names: new wildcard `**` that matches any number of directories
 - hidden files: leading dot is only matched by leading dot
 - utf-8: multibyte encoding, possibility for invalid encoding
 
@@ -264,9 +264,9 @@ bytes is a valid UTF-8 encoding, so the decoding routine may
 signal an error; in this case it is probably best to skip
 forward to the next byte in range 0..127, that is, the next
 valid starting byte in the UTF-8 sequence; alternatively,
-we could return an error flag (instead of true/false).
+wildmatch could return an error flag (instead of true/false).
 
-The decoder could have a signature similar to these
+The decoding routine could have a signature similar to these
 
 ```c
 int decode(void *buf, int *pc);
