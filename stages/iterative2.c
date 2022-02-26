@@ -1,6 +1,6 @@
 
-#include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 
 /* iterative wildcard matching */
@@ -57,30 +57,7 @@ imatch2(const char *pat, const char *str)
   char pc, sc;
   size_t n;
 
-  /* match up to first * in pat */
-
-  for (;;) {
-    pc = *pat++;
-    if (pc == '*')
-      break;
-    sc = *str++;
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc))
-        return false;
-      pat += n;
-    }
-    else if (pc != '?' && pc != sc)
-      return false;
-  }
-
-  assert(pc == '*');
-
-  /* match remaining segments:
-     the * is an anchor where we return on mismatch */
-
-  p = pat; s = str;
+  p = s = 0;
 
   for (;;) {
     if (debug)
@@ -95,21 +72,17 @@ imatch2(const char *pat, const char *str)
     if (sc == 0)
       return pc == 0 ? true : false;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc)) {
-        pat = p;
-        str = ++s;
-      }
-      else pat += n;
+      if (matchbrack(pat, sc)) pat += n;
+      else if (!p) return false;
+      else { pat = p; str = ++s; }
       continue;
     }
     if (pc != '?' && pc != sc) {
-      pat = p;
-      str = ++s;
+      if (!p) return false;
+      pat = p; str = ++s;
       continue;
     }
   }
-
-  assert(0); /* not reached */
 }
 
 #ifdef STANDALONE

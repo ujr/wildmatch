@@ -1,13 +1,13 @@
 
-#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 
 /* iterative wildcard matching */
 /* with character classes and case folding */
 
-#include "wildmatch.h"
+#include "../wildmatch.h"
 
 static bool debug = 0;
 
@@ -69,31 +69,7 @@ imatch3(const char *pat, const char *str, int flags)
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
 
-  /* match up to first * in pat */
-
-  for (;;) {
-    pc = *pat++;
-    if (pc == '*')
-      break;
-    sc = *str++;
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    folded = fold ? swapcase(sc) : sc;
-    if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded))
-        return false;
-      pat += n;
-    }
-    else if (pc != '?' && pc != sc && pc != folded)
-      return false;
-  }
-
-  assert(pc == '*');
-
-  /* match remaining segments:
-     the * is an anchor where we return on mismatch */
-
-  p = pat; s = str;
+  p = s = 0;
 
   for (;;) {
     if (debug)
@@ -109,21 +85,17 @@ imatch3(const char *pat, const char *str, int flags)
       return pc == 0 ? true : false;
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded)) {
-        pat = p;
-        str = ++s;
-      }
-      else pat += n;
+      if (matchbrack(pat, sc, folded)) pat += n;
+      else if (!p) return false;
+      else { pat = p; str = ++s; }
       continue;
     }
     if (pc != '?' && pc != sc && pc != folded) {
-      pat = p;
-      str = ++s;
+      if (!p) return false;
+      pat = p; str = ++s;
       continue;
     }
   }
-
-  assert(0); /* not reached */
 }
 
 int

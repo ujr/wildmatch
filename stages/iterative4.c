@@ -1,14 +1,14 @@
 
-#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 
 /* iterative wildcard matching */
 /* with character classes and case folding */
 /* with special logic for path names */
 
-#include "wildmatch.h"
+#include "../wildmatch.h"
 
 static bool debug = 0;
 
@@ -63,47 +63,22 @@ swapcase(int c)
 }
 
 static bool
-imatch(const char *pat, const char *str, int flags)
+imatch4(const char *pat, const char *str, int flags)
 {
   const char *p, *s, *p0 = pat;
   char pc, sc, folded;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
-  bool matchslash, preslash;
+  bool preslash, matchslash = false;
 
-  /* match up to first * in pat */
-
-  for (;;) {
-    pc = *pat++;
-    if (pc == '*')
-      goto entry;
-    sc = *str++;
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    if (sc == '/' && path && pc != sc)
-      return false;
-    folded = fold ? swapcase(sc) : sc;
-    if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded))
-        return false;
-      pat += n;
-    }
-    else if (pc != '?' && pc != sc && pc != folded)
-      return false;
-  }
-
-  assert(0); /* not reached */
-
-  /* match remaining segments:
-     the * is an anchor where we return on mismatch */
+  p = s = 0;
 
   for (;;) {
     if (debug)
       fprintf(stderr, "s=%s\tp=%s\n", str, pat);
     pc = *pat++;
     if (pc == '*') {
-entry:
       matchslash = false;
       preslash = path && pat > p0+1 && pat[-2] == '/';
       while (*pat == '*') { matchslash = true; pat++; }
@@ -117,35 +92,31 @@ entry:
     if (sc == 0)
       return pc == 0 ? true : false;
     if (sc == '/' && path && pc != sc && !matchslash)
-      return false; /* only a slash can match a slash */
+      return false;  /* only a slash can match a slash */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded)) {
-        if (*s == '/' && path && !matchslash)
-          return false; /* cannot stretch across slash */
-        pat = p;
-        str = ++s;
-      }
-      else pat += n;
+      if (matchbrack(pat, sc, folded)) pat += n;
+      else if (s && *s == '/' && path && !matchslash)
+        return false;  /* cannot stretch across slash */
+      else if (!p) return false;
+      else { pat = p; str = ++s; }
       continue;
     }
     if (pc != '?' && pc != sc && pc != folded) {
-      if (*s == '/' && path && !matchslash)
-        return false; /* cannot stretch across slash */
-      pat = p;
-      str = ++s;
+      if (s && *s == '/' && path && !matchslash)
+        return false;  /* cannot stretch across slash */
+      if (!p) return false;
+      pat = p; str = ++s;
       continue;
     }
   }
-
-  assert(0); /* not reached */
 }
 
 int
 wildmatch(const char *pat, const char *str, int flags)
 {
   if (!pat || !str) return false;
-  return imatch(pat, str, flags);
+  return imatch4(pat, str, flags);
 }
 
 #ifdef STANDALONE
@@ -179,7 +150,7 @@ main(int argc, char *argv[])
   argv += optind;
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: %s [-dfF] <pat> <str1> ...\n", me);
+    fprintf(stderr, "Usage: %s [-dfFpP] <pat> <str1> ...\n", me);
     return 127;
   }
 

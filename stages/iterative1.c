@@ -1,5 +1,4 @@
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -13,32 +12,14 @@ imatch1(const char *pat, const char *str)
   const char *p, *s;
   char pc, sc;
 
-  /* match up to first * in pat */
-
-  for (;;) {
-    pc = *pat++;
-    if (pc == '*')
-      break;
-    sc = *str++;
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    if (pc != '?' && pc != sc)
-      return false;
-  }
-
-  assert(pc == '*');
-
-  /* match remaining segments:
-     the * is an anchor where we return on mismatch */
-
-  p = pat; s = str;
+  p = s = 0;           /* anchor initially not set */
 
   for (;;) {
     if (debug)
       fprintf(stderr, "s=%s\tp=%s\n", str, pat);
     pc = *pat++;
     if (pc == '*') {
-      p = pat;
+      p = pat;         /* set anchor just after wild star */
       s = str;
       continue;
     }
@@ -46,13 +27,13 @@ imatch1(const char *pat, const char *str)
     if (sc == 0)
       return pc == 0 ? true : false;
     if (pc != '?' && pc != sc) {
-      pat = p;
-      str = ++s;
+      if (!p)
+        return false;
+      pat = p;         /* resume at anchor in pattern */
+      str = ++s;       /* but one later in string */
       continue;
     }
   }
-
-  assert(0); /* not reached */
 }
 
 #ifdef STANDALONE

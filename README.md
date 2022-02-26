@@ -101,22 +101,15 @@ again but resume one character later in the string
 ```C
 bool imatch(const char *pat, const char *str)
 {
-  for (;;) {
-    pc = *pat++;
-    if (pc == '*') break;
-    sc = *str++;
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    if (pc != '?' && pc != sc)
-      return false;
-  }
+  const char *p, *s;
+  char pc, sc;
 
-  p = pat; s = str;  // set anchor just after *
+  p = s = 0;           // anchor initially not set
 
   for (;;) {
     pc = *pat++;
     if (pc == '*') {
-      p = pat;       // set anchor just after *
+      p = pat;         // set anchor just after wild star
       s = str;
       continue;
     }
@@ -124,25 +117,31 @@ bool imatch(const char *pat, const char *str)
     if (sc == 0)
       return pc == 0 ? true : false;
     if (pc != '?' && pc != sc) {
-      pat = p;       // resume at anchor in pattern
-      str = ++s;     // but one later in string
+      if (!p)
+        return false;
+      pat = p;         // resume at anchor in pattern
+      str = ++s;       // but one later in string
       continue;
     }
   }
 }
 ```
 
-First `if` in second loop: when seeing an `*` in *pat*
+First `if` in the loop: when seeing a `*` in *pat*
 this commits the current segment and we set an “anchor”
 just after the `*` in *pat* (`p`) and at the current
 location in *str* (`s`).
 
-Last `if` in second loop: upon a mismatch, return to
-the anchor in *pat* and one after the anchor in *str*
-and try again. Here is room for optimization: e.g.,
-after matching `*abcX` against `abcZ`, resuming with
-`*abcX` against `bcZ` is on the safe side, but if there
-is a match, it must be after the `Z` in *str*.
+Last `if` in the loop: upon a mismatch, return to the
+anchor in *pat* and one after the anchor in *str* and
+try again. Here is room for optimization: e.g., after
+matching `*abcX` against `abcZ`, resuming with `*abcX`
+against `bcZ` is on the safe side, but if there is a
+match, it must be after the `Z` in *str*.
+
+In a sense, the “anchor” `p` and `s` implements a stack
+of size one. This stack was implicit in the recursive
+call in the previous solution.
 
 Likely there are other algorithms, but the one above
 was “stretchy” enough for my mind. An implementation can
@@ -227,18 +226,17 @@ This complicates the code quite a bit because of details
 such as `x/**/y` matching `x/y` (only one slash in string
 but two in pattern) and sensible handling of more than two
 stars (treat `***` as `**`).
-The `goto` is a matter of taste but somehow fits in well.
 
 ### Hidden Files
 
 By convention, files with names starting with a period
-(aka dot files) are hidden on Unix systems, that is, the
+(aka dot files) are hidden on Unix systems; for example, the
 `ls` command does not list them unless they are explicitly
 named (or a special option is specified).
 It is useful for a wildcard match to have an option `PERIOD`
 that makes it exhibit this same behaviour: an initial period
 (at start of pattern or immediately following a slash) can
-only be matched by a literal dot in the pattern.
+only be matched by a literal period in the pattern.
 File [iterative5.c](./stages/iterative5.c) contains an implementation.
 
 ### UTF-8
