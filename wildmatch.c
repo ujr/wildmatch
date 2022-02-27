@@ -1,14 +1,20 @@
 
-#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
 
 /* iterative wildcard matching */
 /* with character classes and case folding */
 /* with special logic for path names and dot files */
 
 #include "wildmatch.h"
+
+#define RECURSION_LIMIT 20
+
+#define MATCHED  0
+#define MISMATCH 1
+#define GIVEUP   2
 
 /* About UTF-8
  *
@@ -48,6 +54,7 @@ static const unsigned char utf8tab[] = {
   0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,  /* 1111 10xx, 110x, 1110, 1111 */
 };
 
+/** return the UTF-8 encoded character at *p and increment *p */
 static int
 utf8get(const char **pp)
 {
@@ -70,6 +77,7 @@ utf8get(const char **pp)
   return c;
 }
 
+/** scan cclass, return length or 0 if not a cclass */
 static size_t
 scanbrack(const char *pat)
 {
@@ -81,6 +89,7 @@ scanbrack(const char *pat)
   return pat[n] ? n+1 : 0; /* return length if found, 0 if not */
 }
 
+/** return true iff sc or folded occur in cclass at pat */
 static bool
 matchbrack(const char *pat, int sc, int folded)
 {
@@ -118,6 +127,7 @@ matchbrack(const char *pat, int sc, int folded)
   return compl;
 }
 
+/** return c with case (lower/upper) swapped */
 static int
 swapcase(int c)
 {
@@ -125,91 +135,97 @@ swapcase(int c)
   return lc == c ? toupper(c) : lc;
 }
 
+/** return true iff pat ends with slash-star-star or equivalent */
 static bool
-imatch(const char *pat, const char *str, int flags)
+isglobstar0(int pc, const char *pat)
 {
-  const char *p, *s;
-  const char *p0 = pat;
+  if (pc != '/') return false;
+again:
+  if (*pat == '*') pat++; else return false;
+  if (*pat == '*') pat++; else return false;
+  for (; *pat; pat++) {
+    if (*pat == '/') { pat++; goto again; }
+    if (*pat != '*') return false;
+  }
+  return true;
+}
+
+/** iterative wildcard matching; return true iff str matches pat */
+static int
+domatch(const char *pat, const char *str, int flags, int depth)
+{
+  const char *p, *s, *t;
+  const char *pat0 = pat;
   int pc, sc, folded, prev;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
   bool hidden = flags & WILD_PERIOD;
-  bool matchslash, preslash;
+  bool matchslash = false;
 
   if (hidden) {
     if (*str == '.' && *pat != '.')
-      return false;
+      return MISMATCH;
   }
-
-  /* match up to first * in pat */
 
   pc = sc = prev = 0;
-
-  for (;;) {
-    pc = utf8get(&pat);
-    if (pc == '*')
-      goto entry;
-    prev = sc;
-    sc = utf8get(&str);
-    if (sc == 0)
-      return pc == 0 ? true : false;
-    if (sc == '/' && sc != pc && path)
-      return false;
-    if (sc == '.' && sc != pc && hidden && path && prev == '/')
-      return false;
-    folded = fold ? swapcase(sc) : sc;
-    if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded))
-        return false;
-      pat += n;
-    }
-    else if (pc != '?' && pc != sc && pc != folded)
-      return false;
-  }
-
-  assert(0); /* not reached */
-
-  /* match remaining segments:
-     the * is an anchor where we return on mismatch */
+  p = s = 0;
 
   for (;;) {
     pc = utf8get(&pat);
     if (pc == '*') {
-entry:
-      matchslash = false;
-      preslash = path && pat > p0+1 && pat[-2] == '/';
-      while (*pat == '*') { matchslash = true; pat++; }
-      if (preslash && matchslash && *pat == '/') pat++;
-      /* set anchor (commits previous star) */
-      p = pat;
-      s = str;
+      if (*pat == '*') {
+        const char *before = pat-2;
+        for (++pat; *pat == '*'; pat++);
+        if (!path) matchslash = true;
+        else if ((before < pat0 || *before == '/') &&
+                 (*pat == 0 || *pat == '/')) {
+          if (*pat == 0) return MATCHED;  /* trailing ** matches everything */
+          if (pat[1]) pat++;  /* skip non-trailing slash */
+          if (depth >= RECURSION_LIMIT) return GIVEUP;
+          while (*str) {
+            int r = domatch(pat, str, flags, depth+1);
+            if (r == MATCHED) return MATCHED;
+            if (r == GIVEUP) return GIVEUP;
+            /* skip one directory and try again */
+            t = strchr(str, '/');
+            if (t) str = t+1; else str += strlen(str);
+          }
+          return MISMATCH;
+        }
+        else matchslash = false;
+      }
+      else matchslash = path ? false : true;
+      /* set anchor (commits previous wild star) */
+      p = pat; s = str;
       continue;
     }
     prev = sc;
     sc = utf8get(&str);
     if (sc == 0)
-      return pc == 0 ? true : false;
+      return pc == 0 || isglobstar0(pc, pat) ? MATCHED : MISMATCH;
     if (sc == '/' && sc != pc && path && !matchslash)
-      return false; /* only a slash can match a slash */
+      return MISMATCH;  /* only a slash can match a slash */
     if (sc == '.' && sc != pc && hidden && path && prev == '/')
-      return false; /* only a literal dot can match an initial dot */
+      return MISMATCH;  /* only a literal dot can match an initial dot */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
-      if (!matchbrack(pat, sc, folded)) {
-        if (*s == '/' && path && !matchslash)
-          return false; /* cannot stretch across slash */
+      if (matchbrack(pat, sc, folded)) pat += n;
+      else if (s && *s == '/' && path && !matchslash)
+        return MISMATCH;  /* cannot stretch across slash */
+      else if (!p) return MISMATCH;  /* no anchor to return */
+      else {
         pat = p;
         (void) utf8get(&s);
         str = s;
         prev = 0;
       }
-      else pat += n;
       continue;
     }
     if (pc != '?' && pc != sc && pc != folded) {
-      if (*s == '/' && path && !matchslash)
-        return false; /* cannot stretch across slash */
+      if (s && *s == '/' && path && !matchslash)
+        return MISMATCH;  /* cannot stretch across slash */
+      if (!p) return MISMATCH;  /* no anchor to return */
       pat = p;
       (void) utf8get(&s);
       str = s;
@@ -217,13 +233,11 @@ entry:
       continue;
     }
   }
-
-  assert(0); /* not reached */
 }
 
 int
 wildmatch(const char *pat, const char *str, int flags)
 {
   if (!pat || !str) return false;
-  return imatch(pat, str, flags);
+  return domatch(pat, str, flags, 0) == MATCHED;
 }

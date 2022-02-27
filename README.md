@@ -216,16 +216,39 @@ With the `PATHNAME` option, we can now only match a fixed
 number of directory parts in a path, e.g. `foo/*/*/bar`
 would match `foo/x/y/bar` but not `foo/x/y/z/bar`. It is
 therefore useful to have a new wildcard `**` that matches
-any number (including zero) of directory parts in a path.
+any number (including zero) of directories in a path.
 Because `**` shall match entire directory parts, this
 wildcard can only occur as `**/`, `/**/`, and `/**`.
-Without the `PATHNAME` option, two (or indeed any number
-of) consecutive asterisks are equivalent to just one.
+This new wildcard is usually known as *globstar*, after
+the like-named option in Bash; we may refer to the star
+known previously as the *wildstar*.
 
-This complicates the code quite a bit because of details
-such as `x/**/y` matching `x/y` (only one slash in string
-but two in pattern) and sensible handling of more than two
-stars (treat `***` as `**`).
+Note that now more than one stretchable star can be “active”
+at any time. For example, matching `**/a*` against `a/b/ab`,
+the `**/` would have to be stretched from empty to `a/` to
+`a/b/` before `a*` successfully can match `ab`. Our simple
+iterative algorithm will fail, because the globstar's anchor
+will be overwritten by the wildstar and we really only try
+to match `a*` against `a/b/ab`, which fails.
+
+To remedy this situation, we have to introduce an “anchor
+stack” or – simpler — resort to recursion. The code in
+[iterative4.c](./stages/iteraive4.c) does the latter.
+Recursion depth is limited by the number of globstars
+in the pattern.
+
+Another complication concerns the slashes around a globstar:
+for example, `x/**/y` must match `x/y` (one slash in string
+but two slashes in pattern), and `**/x` must match `x` (no
+slash in string, one slash in pattern). More than two stars
+as in `x/***/y` shall be treated the same as two; and without
+the `PATHNAME` option, two or more consecutive stars are
+equivalent to just one.
+
+Leading and trailing slashes as in `/**/x` or `x/**/` will
+require a corresponding slash in the string; this is useful
+to match absolute paths or directory paths (marked with a
+trailing slash).
 
 ### Hidden Files
 
@@ -311,8 +334,8 @@ by Kirk J. Krauss, presented as
 [Matching Wildcards: An Algorithm][ddj] on August 26, 2008,
 in (now discontinued) Dr. Dobbs Journal.
 
-The final version of the iterative algorithm is described
-in [wildmatch.md](./wildmatch.md) and implemented in
+The final version of the algorithm is described in
+[wildmatch.md](./wildmatch.md) and implemented in
 [wildmatch.h](./wildmatch.h) and [wildmatch.c](./wildmatch.c).
 
 ## License

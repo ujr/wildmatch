@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 /* iterative wildcard matching */
 /* with character classes and case folding */
@@ -12,6 +13,7 @@
 
 static bool debug = 0;
 
+/** scan cclass, return length or 0 if not a cclass */
 static size_t
 scanbrack(const char *pat)
 {
@@ -23,6 +25,7 @@ scanbrack(const char *pat)
   return pat[n] ? n+1 : 0; /* return length if found, 0 if not */
 }
 
+/** return true iff sc or folded occur in cclass at pat */
 static bool
 matchbrack(const char *pat, int sc, int folded)
 {
@@ -55,6 +58,7 @@ matchbrack(const char *pat, int sc, int folded)
   return compl;
 }
 
+/** return c with case (lower/upper) swapped */
 static int
 swapcase(int c)
 {
@@ -62,17 +66,32 @@ swapcase(int c)
   return lc == c ? toupper(c) : lc;
 }
 
+/** return true iff pat ends with slash-star-star or equivalent */
+static bool
+isglobstar0(int pc, const char *pat)
+{
+  if (pc != '/') return false;
+again:
+  if (*pat == '*') pat++; else return false;
+  if (*pat == '*') pat++; else return false;
+  for (; *pat; pat++) {
+    if (*pat == '/') { pat++; goto again; }
+    if (*pat != '*') return false;
+  }
+  return true;
+}
+
 static bool
 imatch5(const char *pat, const char *str, int flags)
 {
-  const char *p, *s;
-  const char *p0 = pat, *s0 = str;
+  const char *p, *s, *t;
+  const char *pat0 = pat, *str0 = str;
   char pc, sc, folded;
   size_t n;
   bool fold = flags & WILD_CASEFOLD;
   bool path = flags & WILD_PATHNAME;
   bool hidden = flags & WILD_PERIOD;
-  bool preslash, matchslash = false;
+  bool matchslash = false;
 
   if (hidden) {
     if (*str == '.' && *pat != '.')
@@ -86,21 +105,34 @@ imatch5(const char *pat, const char *str, int flags)
       fprintf(stderr, "s=%s\tp=%s\n", str, pat);
     pc = *pat++;
     if (pc == '*') {
-      matchslash = false;
-      preslash = path && pat > p0+1 && pat[-2] == '/';
-      while (*pat == '*') { matchslash = true; pat++; }
-      if (preslash && matchslash && *pat == '/') pat++;
-      /* set anchor (commits previous star) */
-      p = pat;
-      s = str;
+      if (*pat == '*') {
+        const char *before = pat-2;
+        while (*pat == '*') pat++;
+        if (!path) matchslash = true;
+        else if ((before < pat0 || *before == '/') &&
+                (*pat == 0 || *pat == '/')) {
+          if (*pat == 0) return true;  /* trailing ** matches anything */
+          if (pat[1]) pat++;  /* skip non-trailing slash */
+          while (*str) {
+            if (imatch5(pat, str, flags)) return true;
+            t = strchr(str, '/');
+            if (t) str = t+1; else str += strlen(str);
+          }
+          return false;
+        }
+        else matchslash = false;
+      }
+      else matchslash = path ? false : true;
+      /* set anchor (commits previous wild star) */
+      p = pat; s = str;
       continue;
     }
     sc = *str++;
     if (sc == 0)
-      return pc == 0 ? true : false;
+      return pc == 0 || isglobstar0(pc, pat) ? true : false;
     if (sc == '/' && sc != pc && path && !matchslash)
       return false;  /* only a slash can match a slash */
-    if (sc == '.' && sc != pc && hidden && path && str > s0+1 && str[-2] == '/')
+    if (sc == '.' && sc != pc && hidden && path && str > str0+1 && str[-2] == '/')
       return false;  /* only a literal dot can match a dot in initial position */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
