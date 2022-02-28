@@ -34,7 +34,7 @@ main(int argc, char *argv[])
   argv += optind;
 
   if (argc < 2) {
-    fprintf(stderr, "Usage: %s [-dfFhHpP] <pat> <str1> ...\n", me);
+    fprintf(stderr, "Usage: %s [-fFhHpP] <pat> <str1> ...\n", me);
     return 127;
   }
 

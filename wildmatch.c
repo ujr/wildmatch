@@ -188,8 +188,9 @@ domatch(const char *pat, const char *str, int flags, int depth)
             if (r == MATCHED) return MATCHED;
             if (r == GIVEUP) return GIVEUP;
             /* skip one directory and try again */
-            t = strchr(str, '/');
-            if (t) str = t+1; else str += strlen(str);
+            t = strchr(str+1, '/');
+            if (t) str = t[1] ? t+1 : t;  /* skip non-trailing slash */
+            else str += strlen(str);
           }
           return MISMATCH;
         }

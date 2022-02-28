@@ -230,7 +230,7 @@ struct tests ptests[] = {
   { "**/*/**",     "a/x/y/b",   WILD_PATHNAME, true  }, /* sic: a/|x/|y/b */
   { "**/*/**",     "a/a//b/b",  WILD_PATHNAME, true  },
 
-  { "**/a/*/b/***/c/*/d/**", "/a//b/c//d/", WILD_PATHNAME, true },
+  { "**/a/*/b/***/c/*/d/**", "a//b/c//d/", WILD_PATHNAME, true },
   { "**/a/*/b/***/c/*/d/**", "X/a/-/b/Y/c/-/d/Z", WILD_PATHNAME, true },
   { "**/a/*/b/***/c/*/d/**", "X/X/a/-/b/Y/Y/c/-/d/Z/Z", WILD_PATHNAME, true },
 
@@ -245,9 +245,11 @@ struct tests ptests[] = {
   { "**/",         "f",         WILD_PATHNAME, false },
   { "**/",         "d/f",       WILD_PATHNAME, false },
   { "**/",         "d/e/f",     WILD_PATHNAME, false },
+  { "**/",         "foo/",      WILD_PATHNAME, true  },
   { "/**",         "f.x",       WILD_PATHNAME, false },
   { "/**",         "d/f.x",     WILD_PATHNAME, false },
   { "/**",         "d/e/f.x",   WILD_PATHNAME, false },
+  { "/**",         "/foo",      WILD_PATHNAME, true  },
 
   /* but inner slashes are optional (because globstar also matches no directory) */
   { "**/f",        "f",         WILD_PATHNAME, true  },
@@ -265,6 +267,7 @@ struct tests ptests[] = {
   { "**/*.x",      "f.x",       WILD_PATHNAME, true  },
   { "**/*.x",      "d/f.x",     WILD_PATHNAME, true  },
   { "**/*.x",      "d/e/f.x",   WILD_PATHNAME, true  },
+  { "**/*.x",      "dir/",      WILD_PATHNAME, false },
 //{ "a/**/**/**/", "a/",        WILD_PATHNAME, true  },
 //{ "a/**/**/**/", "a/b/c/d/e/f/g/", WILD_PATHNAME, true },
 
