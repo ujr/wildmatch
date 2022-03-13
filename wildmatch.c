@@ -150,6 +150,16 @@ again:
   return true;
 }
 
+/** return true iff sc+str is a dotfile (but not ./ nor ../) */
+static bool
+isdotfile(int sc, const char *str)
+{
+  if (sc != '.') return false;
+  if (*str == '/') return false;
+  if (*str == '.' && str[1] == '/') return false;
+  return true;
+}
+
 /** iterative wildcard matching; return true iff str matches pat */
 static int
 domatch(const char *pat, const char *str, int flags, int depth)
@@ -164,7 +174,7 @@ domatch(const char *pat, const char *str, int flags, int depth)
   bool matchslash = false;
 
   if (hidden) {
-    if (*str == '.' && *pat != '.')
+    if (*str == '.' && *pat != '.' && isdotfile(*str, str+1))
       return MISMATCH;
   }
 
@@ -207,7 +217,7 @@ domatch(const char *pat, const char *str, int flags, int depth)
       return pc == 0 || isglobstar0(pc, pat) ? MATCHED : MISMATCH;
     if (sc == '/' && sc != pc && path && !matchslash)
       return MISMATCH;  /* only a slash can match a slash */
-    if (sc == '.' && sc != pc && hidden && path && prev == '/')
+    if (sc == '.' && sc != pc && hidden && path && prev == '/' && isdotfile(sc, str))
       return MISMATCH;  /* only a literal dot can match an initial dot */
     folded = fold ? swapcase(sc) : sc;
     if (pc == '[' && (n = scanbrack(pat)) > 0) {
