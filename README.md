@@ -233,7 +233,7 @@ to match `a*` against `a/b/ab`, which fails.
 
 To remedy this situation, we have to introduce an “anchor
 stack” or – simpler — resort to recursion. The code in
-[iterative4.c](./stages/iteraive4.c) does the latter.
+[iterative4.c](./stages/iterative4.c) does the latter.
 Recursion depth is limited by the number of globstars
 in the pattern.
 
